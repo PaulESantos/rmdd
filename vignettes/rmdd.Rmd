@@ -1,0 +1,26 @@
+---
+title: "Getting Started with rmdd"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with rmdd}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(rmdd)
+```
+
+`rmdd` is intended to support mammal taxonomic name resolution workflows based
+on the Mammal Diversity Database.
+
+```{r}
+mdd_reference()
+```

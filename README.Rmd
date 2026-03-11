@@ -1,0 +1,69 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# rmdd
+
+`rmdd` is a development-stage R package for mammal taxonomic name resolution
+using the Mammal Diversity Database (MDD).
+
+## Goal
+
+The package is intended to provide a mammal-focused workflow analogous to
+plant-oriented TNRS tools, while following tidyverse package conventions and
+CRAN-oriented development practices.
+
+## Installation
+
+`rmdd` is not on CRAN yet. Install the development version from the project
+directory:
+
+```{r eval = FALSE}
+# install.packages("pak")
+pak::pak("path/to/rmdd")
+```
+
+## Planned features
+
+- Download and cache current MDD source files
+- Read MDD exports into tidy tibbles
+- Standardize input names
+- Perform exact and approximate matching
+- Report accepted names, unmatched names, and match diagnostics
+
+## Current bootstrap
+
+The project currently includes:
+
+- Core package metadata and license files
+- Initial functions for download, load, and simple matching
+- Unit tests using `testthat`
+- `pkgdown` and `lintr` configuration stubs
+
+## Example
+
+```{r}
+library(rmdd)
+
+sample_path <- system.file("extdata", "mdd_sample.csv", package = "rmdd")
+mdd_tbl <- mdd_load(sample_path)
+
+mdd_match_names(
+  names = c("Puma concolor", "Vicugna vicugna", "Puma concolr"),
+  data = mdd_tbl,
+  method = "agrep"
+)
+```
+
+## Reference
+
+```{r}
+mdd_reference()
+```
