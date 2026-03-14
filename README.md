@@ -4,18 +4,12 @@
 `rmdd` is a development-stage R package for mammal taxonomic name
 resolution using the Mammal Diversity Database (MDD).
 
-## Goal
-
-The package is intended to provide a mammal-focused workflow analogous
-to plant-oriented TNRS tools, while following tidyverse package
-conventions and CRAN-oriented development practices.
-
 ## Installation
 
 When `rmdd` is available on CRAN, install it with:
 
 ``` r
-install.packages("rmdd")
+pak::pak("rmdd")
 ```
 
 Install the development version from GitHub with:
@@ -67,4 +61,8 @@ mdd_match_names(
 
 ``` r
 mdd_reference()
+#> # A tibble: 1 × 3
+#>   source                    url                              notes              
+#>   <chr>                     <chr>                            <chr>              
+#> 1 Mammal Diversity Database https://www.mammaldiversity.org/ Replace with a sta…
 ```

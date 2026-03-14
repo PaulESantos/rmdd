@@ -14,18 +14,13 @@ knitr::opts_chunk$set(
 `rmdd` is a development-stage R package for mammal taxonomic name resolution
 using the Mammal Diversity Database (MDD).
 
-## Goal
-
-The package is intended to provide a mammal-focused workflow analogous to
-plant-oriented TNRS tools, while following tidyverse package conventions and
-CRAN-oriented development practices.
 
 ## Installation
 
 When `rmdd` is available on CRAN, install it with:
 
 ```{r eval = FALSE}
-install.packages("rmdd")
+pak::pak("rmdd")
 ```
 
 Install the development version from GitHub with:
