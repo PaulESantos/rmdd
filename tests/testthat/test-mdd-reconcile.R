@@ -94,6 +94,39 @@ test_that("mdd_matching supports fuzzy genus and fuzzy species stages", {
   expect_equal(out$accepted_name[[2]], "Puma concolor")
 })
 
+test_that("mdd_matching allows a single-edit fuzzy species match for short epithets", {
+  checklist <- tibble::tibble(
+    id = c(1),
+    sci_name = c("Panthera_onca"),
+    genus = c("Panthera"),
+    specific_epithet = c("onca"),
+    authority_species_author = c("Linnaeus")
+  )
+
+  synonyms <- tibble::tibble(
+    mdd_syn_id = character(),
+    mdd_species_id = character(),
+    mdd_author = character(),
+    mdd_original_combination = character()
+  )
+
+  out <- mdd_matching(
+    "Panthera onkca",
+    target_df = build_mdd_match_backbone(
+      checklist = checklist,
+      synonyms = synonyms
+    ),
+    prefilter_genus = FALSE,
+    max_dist = 1,
+    method = "osa"
+  )
+
+  expect_true(out$matched[[1]])
+  expect_equal(out$accepted_name[[1]], "Panthera onca")
+  expect_true(out$fuzzy_match_species_within_genus[[1]])
+  expect_equal(out$fuzzy_species_dist[[1]], 1)
+})
+
 
 test_that("mdd_name_index preserves accepted and synonym rows", {
   checklist <- tibble::tibble(

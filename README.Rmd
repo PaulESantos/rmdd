@@ -9,61 +9,193 @@ knitr::opts_chunk$set(
 )
 ```
 
-# rmdd
+## Overview
 
-`rmdd` is a development-stage R package for mammal taxonomic name resolution
-using the Mammal Diversity Database (MDD).
+`rmdd` is a tidyverse-style R package that wraps the **Mammal Diversity Database (MDD v2.4)**, the authoritative taxonomic checklist maintained by the American Society of Mammalogists. The package bundles the complete MDD release as ready-to-use tibbles and provides a multi-stage name reconciliation pipeline to resolve mammal scientific names — including synonyms, original combinations, and typographic variants — against the current accepted taxonomy.
 
+The MDD currently covers **6,871 mammal species** (6,758 living wild + 113 recently extinct post-1500 CE), with over **64,683 synonymous names** curated across 27 orders, 167 families, and 1,360 genera.
+
+---
 
 ## Installation
 
-When `rmdd` is available on CRAN, install it with:
-
-```{r eval = FALSE}
-pak::pak("rmdd")
-```
-
-Install the development version from GitHub with:
-
-```{r eval = FALSE}
+```r
+# Install the development version from GitHub:
 # install.packages("pak")
 pak::pak("PaulESantos/rmdd")
 ```
 
-## Planned features
+---
 
-- Download and cache current MDD source files
-- Read MDD exports into tidy tibbles
-- Standardize input names
-- Perform exact and approximate matching
-- Report accepted names, unmatched names, and match diagnostics
+## Bundled datasets
 
-## Current bootstrap
+`rmdd` ships three datasets that are loaded lazily and available immediately after `library(rmdd)`:
 
-The project currently includes:
+| Dataset | Rows | Description |
+|---|---|---|
+| `mdd_checklist` | 6,871 | Species-level checklist with 52 variables (taxonomy, distribution, IUCN status, type locality, cross-release flags) |
+| `mdd_synonyms` | ~64,683+ | Nomenclatural synonym table with 44 variables linking every known name combination to its accepted species |
+| `mdd_type_specimen_metadata` | 138 | Institutional metadata for natural history collections cited in the synonym table |
 
-- Core package metadata and license files
-- Initial functions for download, load, and simple matching
-- Unit tests using `testthat`
-- `pkgdown` and `lintr` configuration stubs
+All column names are normalized from the original camelCase to `snake_case` on import. The original column names are documented in the help pages for each dataset.
 
-## Example
+---
+
+## Core functions
+
+### Name reconciliation
 
 ```{r}
 library(rmdd)
 
-sample_path <- system.file("extdata", "mdd_sample.csv", package = "rmdd")
-mdd_tbl <- mdd_load(sample_path)
+# Reconcile a vector of names against MDD
+mdd_matching(c("Puma concolor", "Felis concolor", "Pumma concolor"))
 
-mdd_match_names(
-  names = c("Puma concolor", "Vicugna vicugna", "Puma concolr"),
-  data = mdd_tbl,
-  method = "agrep"
-)
+# Retrieve full structured information for a taxon
+mdd_taxon_info("Vicugna vicugna")
+
 ```
 
-## Reference
+The reconciliation pipeline in `mdd_matching()` follows a waterfall of five stages, moving from strict to relaxed evidence:
+
+1. **Direct match** — exact match on the cleaned full name or genus + epithet pair
+2. **Exact genus** — genus found in the MDD, regardless of species
+3. **Fuzzy genus** — genus matched by string distance (OSA by default, configurable)
+4. **Exact species within matched genus** — species epithet matched exactly within the resolved genus
+5. **Fuzzy species within matched genus** — species epithet matched by string distance
+
+Every row in the output carries a `match_stage` label, pathway flags (`direct_match`, `fuzzy_match_genus`, …), fuzzy distance columns, and the full accepted-name context (`accepted_id`, `accepted_name`, `accepted_author`).
+
+### Parsing and classification
 
 ```{r}
-mdd_reference()
+# Parse a vector of names into taxonomic components
+classify_mammal_names(c(
+  "Puma concolor",
+  "Capromys (Pygmaeocapromys) angelcabrerai",
+  "Mus musculus domesticus"
+))
+
+
+mdd_matching("Cricetus cricetus")
 ```
+
+### Distribution analysis
+
+```{r}
+# Country-level mammal diversity summary
+mdd_distribution_summary(level = "country")
+
+# Continent-level, excluding domesticated species
+mdd_distribution_summary(
+  level = "continent",
+  exclude_domesticated = TRUE
+)
+
+# Distribution map (requires rnaturalearth + rnaturalearthdata)
+mdd_distribution_map("Tremarctos ornatus", zoom = "auto")
+mdd_distribution_map("Lama vicugna", quiet = TRUE)
+```
+
+### Data citations
+
+```{r}
+# Formatted MDD dataset citation
+mdd_reference()
+
+```
+
+---
+
+## Example workflow
+
+```{r}
+library(rmdd)
+library(tidyverse)
+
+# 1. A list with spelling variants and synonyms
+names_to_check <- c(
+  "Panthera onca",
+  "Felis onca",          # historical combination
+  "Panthera onkca",      # typo
+  "Lontra longicaudis",
+  "Lutra longicaudis"    # synonym
+)
+
+# 2. Run the reconciliation pipeline
+result <- mdd_matching(names_to_check, 
+                       allow_duplicates = TRUE)
+
+# 3. Inspect results
+result |>
+  select(input_name, matched_name, taxon_status,
+         accepted_name, matched, match_stage)
+
+# 4. Full taxon profile for one species
+mdd_taxon_info("Panthera onca")
+
+# 5. Distribution map
+mdd_distribution_map("Panthera onca", zoom = "auto")
+```
+
+---
+
+## The Mammal Diversity Database
+
+The MDD is maintained by the American Society of Mammalogists and tracks all taxonomic changes to living and recently extinct mammal species (post-1500 CE) in real time. The current release is **v2.4** (January 2, 2026).
+
+Key MDD v2.4 statistics:
+
+| Taxa | Count |
+|---|---|
+| Total species | 6,871 |
+| Living wild species | 6,741 |
+| Recently extinct (post-1500 CE) | 113 |
+| Domestic species | 17 |
+| Genera | 1,360 |
+| Families | 167 |
+| Orders | 27 |
+| Synonymous names | 64,683+ |
+
+The MDD v2 introduced geographic distribution codings at the country, US state, continent, and biogeographic realm levels, a comprehensive nomenclatural synonym dataset with type locality and specimen information curated in coordination with [Hesperomys](https://hesperomys.com) and [Batnames](https://batnames.org), and a redesigned website with advanced search and data visualization.
+
+---
+
+## Citation
+
+### Citing this package
+
+```{r}
+citation("rmdd")
+```
+
+### Citing the MDD dataset
+
+```
+Mammal Diversity Database. (2026). Mammal Diversity Database (Version 2.4) [Data set].
+Zenodo. https://doi.org/10.5281/zenodo.17033774
+```
+
+Use `mdd_reference()` to generate a correctly formatted citation from within R, including taxon-level entry citations when needed.
+
+### Citing the MDD taxonomy (v2.0)
+
+Burgin, C. J., Zijlstra, J. S., Becker, M. A., Handika, H., Alston, J. M., Widness, J., Liphardt, S., Huckaby, D. G., and Upham, N. S. (2025). How many mammal species are there now? Updates and trends in taxonomic, nomenclatural, and geographic knowledge. *Journal of Mammalogy* in press. <https://doi.org/10.1101/2025.02.27.640393>
+
+### Citing the MDD taxonomy (v1.0)
+
+Burgin, C. J., Colella, J. P., Kahn, P. L., and Upham, N. S. (2018). How many species of mammals are there? *Journal of Mammalogy* 99: 1–11. <https://doi.org/10.1093/jmammal/gyx147>
+
+
+---
+
+## Related resources
+
+- [MDD website](https://www.mammaldiversity.org/)
+- [MDD Zenodo archive](https://doi.org/10.5281/zenodo.4139722)
+
+---
+
+## Contributing and issues
+
+Bug reports and feature requests are welcome at <https://github.com/PaulESantos/rmdd/issues>.

@@ -1089,7 +1089,11 @@ mdd_matching <- function(
   ) |>
     dplyr::filter(!is.na(query_species)) |>
     dplyr::filter(abs(.orig_len - .cand_len) <= max_dist) |>
-    dplyr::filter(!(.orig_len <= 7 & .orig_len != .cand_len)) |>
+    dplyr::filter(
+      .orig_len > 7 |
+        .orig_len == .cand_len |
+        fuzzy_species_dist <= 1
+    ) |>
     dplyr::group_by(.row_id) |>
     dplyr::slice_min(order_by = fuzzy_species_dist, with_ties = TRUE) |>
     dplyr::ungroup()
