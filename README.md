@@ -306,6 +306,8 @@ names_to_check <- c(
 # 2. Run the reconciliation pipeline
 result <- mdd_matching(names_to_check, 
                        allow_duplicates = TRUE)
+#> Warning: ! Multiple fuzzy matches for some species within genus (tied distances).
+#> ℹ The first match is selected.
 
 # 3. Inspect results
 result |>
@@ -316,7 +318,7 @@ result |>
 #>   <chr>              <chr>        <chr>        <chr>         <lgl>   <chr>      
 #> 1 Panthera onca      Panthera on… accepted     Panthera onca TRUE    direct_mat…
 #> 2 Felis onca         Felis onca   synonym      Panthera onca TRUE    direct_mat…
-#> 3 Panthera onkca     <NA>         <NA>         <NA>          FALSE   genus_matc…
+#> 3 Panthera onkca     Panthera on… accepted     Panthera onca TRUE    fuzzy_matc…
 #> 4 Lontra longicaudis Lontra long… accepted     Lontra longi… TRUE    direct_mat…
 #> 5 Lutra longicaudis  Lutra longi… synonym      Lontra longi… TRUE    direct_mat…
 
@@ -481,6 +483,22 @@ search and data visualization.
 
 ``` r
 citation("rmdd")
+#> To cite package 'rmdd' in publications use:
+#> 
+#>   Santos Andrade P (2026). _rmdd: Resolve Mammal Names with the Mammal
+#>   Diversity Database_. R package version 0.0.0.1, commit
+#>   eb0f60c1e0c8288db12ba743dc725abec0899e76,
+#>   <https://github.com/PaulESantos/rmdd>.
+#> 
+#> A BibTeX entry for LaTeX users is
+#> 
+#>   @Manual{,
+#>     title = {rmdd: Resolve Mammal Names with the Mammal Diversity Database},
+#>     author = {Paul E. {Santos Andrade}},
+#>     year = {2026},
+#>     note = {R package version 0.0.0.1, commit eb0f60c1e0c8288db12ba743dc725abec0899e76},
+#>     url = {https://github.com/PaulESantos/rmdd},
+#>   }
 ```
 
 ### Citing the MDD dataset

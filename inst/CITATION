@@ -1,0 +1,69 @@
+citHeader("To cite rmdd in publications, please use:")
+
+bibentry(
+  bibtype = "Manual",
+  title = "rmdd: Mammal Diversity Database Tools for R",
+  author = person("Paul E.", "Santos Andrade",
+                  email = "paulefrens@gmail.com",
+                  comment = c(ORCID = "0000-0002-6635-0375")),
+  year = "2026",
+  note = "R package version 0.0.1",
+  url = "https://github.com/PaulESantos/rmdd",
+  textVersion = paste(
+    "Santos Andrade, P. E. (2026).",
+    "rmdd: Mammal Diversity Database Tools for R.",
+    "R package version 0.0.1.",
+    "https://github.com/PaulESantos/rmdd"
+  ),
+  header = "To cite the rmdd package in publications, please use:",
+  footer = "The mammal taxonomy bundled in this package is based on:"
+)
+
+bibentry(
+  bibtype = "Misc",
+  title = "Mammal Diversity Database (Version 2.4)",
+  author = person("Mammal Diversity Database"),
+  year = "2026",
+  note = "Version 2.4. Data set.",
+  publisher = "Zenodo",
+  doi = "10.5281/zenodo.17033774",
+  url = "https://doi.org/10.5281/zenodo.17033774",
+  textVersion = paste(
+    "Mammal Diversity Database. (2026).",
+    "Mammal Diversity Database (Version 2.4) [Data set].",
+    "Zenodo.",
+    "https://doi.org/10.5281/zenodo.17033774"
+  )
+)
+
+bibentry(
+  bibtype = "Article",
+  title = paste(
+    "How many mammal species are there now?",
+    "Updates and trends in taxonomic, nomenclatural, and geographic knowledge"
+  ),
+  author = c(
+    person("Connor J.", "Burgin"),
+    person("Jelle S.", "Zijlstra"),
+    person("Mathias A.", "Becker"),
+    person("Heru", "Handika"),
+    person("Jesse M.", "Alston"),
+    person("Jane", "Widness"),
+    person("Schuyler", "Liphardt"),
+    person("David G.", "Huckaby"),
+    person("Nathan S.", "Upham")
+  ),
+  journal = "Journal of Mammalogy",
+  year = "2025",
+  note = "in press",
+  doi = "10.1101/2025.02.27.640393",
+  url = "https://doi.org/10.1101/2025.02.27.640393",
+  textVersion = paste(
+    "Burgin, C. J., Zijlstra, J. S., Becker, M. A., Handika, H.,",
+    "Alston, J. M., Widness, J., Liphardt, S., Huckaby, D. G., and Upham, N. S. (2025).",
+    "How many mammal species are there now?",
+    "Updates and trends in taxonomic, nomenclatural, and geographic knowledge.",
+    "Journal of Mammalogy, in press.",
+    "https://doi.org/10.1101/2025.02.27.640393"
+  )
+)
