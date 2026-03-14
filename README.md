@@ -483,22 +483,27 @@ search and data visualization.
 
 ``` r
 citation("rmdd")
-#> To cite package 'rmdd' in publications use:
+#> To cite rmdd in publications, please use:
 #> 
-#>   Santos Andrade P (2026). _rmdd: Resolve Mammal Names with the Mammal
-#>   Diversity Database_. R package version 0.0.0.1, commit
-#>   eb0f60c1e0c8288db12ba743dc725abec0899e76,
-#>   <https://github.com/PaulESantos/rmdd>.
+#> To cite the rmdd package in publications, please use:
 #> 
-#> A BibTeX entry for LaTeX users is
+#>   Santos Andrade, P. E. (2026). rmdd: Mammal Diversity Database Tools
+#>   for R. R package version 0.0.1. https://github.com/PaulESantos/rmdd
 #> 
-#>   @Manual{,
-#>     title = {rmdd: Resolve Mammal Names with the Mammal Diversity Database},
-#>     author = {Paul E. {Santos Andrade}},
-#>     year = {2026},
-#>     note = {R package version 0.0.0.1, commit eb0f60c1e0c8288db12ba743dc725abec0899e76},
-#>     url = {https://github.com/PaulESantos/rmdd},
-#>   }
+#> The mammal taxonomy bundled in this package is based on:
+#> 
+#>   Mammal Diversity Database. (2026). Mammal Diversity Database (Version
+#>   2.4) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17033774
+#> 
+#>   Burgin, C. J., Zijlstra, J. S., Becker, M. A., Handika, H., Alston,
+#>   J. M., Widness, J., Liphardt, S., Huckaby, D. G., and Upham, N. S.
+#>   (2025). How many mammal species are there now? Updates and trends in
+#>   taxonomic, nomenclatural, and geographic knowledge. Journal of
+#>   Mammalogy, in press. https://doi.org/10.1101/2025.02.27.640393
+#> 
+#> To see these entries in BibTeX format, use 'print(<citation>,
+#> bibtex=TRUE)', 'toBibtex(.)', or set
+#> 'options(citation.bibtex.max=999)'.
 ```
 
 ### Citing the MDD dataset
