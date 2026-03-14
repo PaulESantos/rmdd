@@ -19,3 +19,10 @@ Construct a species-level reconciliation backbone that combines accepted MDD
 checklist names with synonym names and links every matched name to its
 accepted species context.
 }
+\examples{
+bb <- build_mdd_match_backbone(
+  checklist = dplyr::slice(mdd_checklist, 1:10),
+  synonyms = dplyr::slice(mdd_synonyms, 1:20)
+)
+bb
+}

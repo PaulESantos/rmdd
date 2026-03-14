@@ -14,7 +14,13 @@ A tibble with one row per input name and standardized columns for
 species-level reconciliation.
 }
 \description{
-Parse mammal scientific names into genus, species, and trailing author text.
-The parser is intentionally conservative and targets species-level MDD
-reconciliation workflows.
+Parse mammal scientific names into genus, optional subgenus, species,
+optional subspecies, and trailing author text. The parser is intentionally
+conservative and targets species-level MDD reconciliation workflows.
+}
+\examples{
+classify_mammal_names(c(
+  "Puma concolor",
+  "Capromys (Pygmaeocapromys) angelcabrerai"
+))
 }

@@ -6,35 +6,219 @@
 \title{Current Mammal Diversity Database checklist}
 \format{
 A tibble with 6,871 rows and 52 variables in the MDD v2.4 release,
-with source column names normalized to snake_case during data import.
+with source column names normalized to \code{snake_case} during data import.
+Variables and their original camelCase equivalents:
+
+\describe{
+\item{sci_name}{(\code{sciName}) Unique genus–epithet key joined by an
+underscore; derived programmatically from \code{genus} and
+\code{specific_epithet}.}
+\item{id}{(\code{id}) Unique integer identifier used for indexing and
+permalinking. Initial batch (14 Sep 2020) was numbered from
+1,000,001 upward when sorted by \code{phylosort}; subsequent additions
+start at 1,006,485.}
+\item{phylosort}{(\code{phylosort}) Numeric sort key ordering the 27
+extant mammal orders according to the phylogenetic hierarchy in
+Figure 1 of the \emph{Illustrated Checklist of the Mammals of the
+World} (2020).}
+\item{main_common_name}{(\code{mainCommonName}) Primary vernacular name
+following the \emph{Handbook of the Mammals of the World} style
+conventions: all words capitalised except pre-hyphen elements;
+"and" constructions use hyphens (e.g. \emph{Black-and-white Ruffed
+Lemur}); directional modifiers are not hyphenated (e.g.
+\emph{Southwestern Myotis}).}
+\item{other_common_names}{(\code{otherCommonNames}) Pipe-separated (\code{|})
+list of additional vernacular names documented in the literature,
+following the same formatting rules as \code{main_common_name};
+primarily English, but widely used names from other languages are
+occasionally included.}
+\item{subclass}{(\code{subclass}) Taxonomic subclass; \code{NA} when not
+applicable.}
+\item{infraclass}{(\code{infraclass}) Taxonomic infraclass; \code{NA} when
+not applicable.}
+\item{magnorder}{(\code{magnorder}) Taxonomic magnorder; \code{NA} when not
+applicable.}
+\item{superorder}{(\code{superorder}) Taxonomic superorder; \code{NA} when
+not applicable.}
+\item{order}{(\code{order}) Taxonomic order; present for all taxa.}
+\item{suborder}{(\code{suborder}) Taxonomic suborder; \code{NA} when not
+applicable; \code{"incertae sedis"} for taxa unassigned within an
+order that uses suborders.}
+\item{infraorder}{(\code{infraorder}) Taxonomic infraorder; \code{NA} when
+not applicable; \code{"incertae sedis"} when applicable but
+unassigned.}
+\item{parvorder}{(\code{parvorder}) Taxonomic parvorder; \code{NA} when not
+applicable; \code{"incertae sedis"} when applicable but unassigned.}
+\item{superfamily}{(\code{superfamily}) Taxonomic superfamily; \code{NA} when
+not applicable; \code{"incertae sedis"} when applicable but
+unassigned.}
+\item{family}{(\code{family}) Taxonomic family; present for all taxa.}
+\item{subfamily}{(\code{subfamily}) Taxonomic subfamily; \code{NA} when not
+applicable; \code{"incertae sedis"} when applicable but unassigned.}
+\item{tribe}{(\code{tribe}) Taxonomic tribe; \code{NA} when not applicable;
+\code{"incertae sedis"} when applicable but unassigned.}
+\item{subtribe}{(\code{subtribe}) Taxonomic subtribe; \code{NA} when not
+applicable; \code{"incertae sedis"} when applicable but unassigned.}
+\item{genus}{(\code{genus}) Taxonomic genus; present for all taxa.}
+\item{subgenus}{(\code{subgenus}) Taxonomic subgenus; \code{NA} when not
+applicable; \code{"incertae sedis"} when applicable but unassigned.}
+\item{specific_epithet}{(\code{specificEpithet}) Taxonomic species
+epithet.}
+\item{authority_species_author}{(\code{authoritySpeciesAuthor}) Author
+surname(s) of the original species description, sourced from
+\code{Species_Syn_Current}; all authors on the author line are
+included, with an Oxford comma before the last name when three or
+more authors are present; an \code{"in"} statement is added when the
+work appears in a volume with different editors; shared surnames
+are disambiguated by initials or full middle names; Chinese,
+Korean, and Indochinese names are written out in full with surname
+first and hyphens removed.}
+\item{authority_species_year}{(\code{authoritySpeciesYear}) Year of the
+original species description, sourced from
+\code{Species_Syn_Current}.}
+\item{authority_parentheses}{(\code{authorityParentheses}) Parenthesis
+flag: \code{0} = no parentheses; \code{1} = authority in parentheses
+(indicating the species was originally described under a
+different genus).}
+\item{original_name_combination}{(\code{originalNameCombination}) Name
+combination exactly as it appears in the original description,
+sourced from \code{Species_Syn_Current}.}
+\item{authority_species_citation}{(\code{authoritySpeciesCitation}) Full
+or abbreviated literature citation for the authority publication;
+APA format when verified by PDF or physical copy, abbreviated
+otherwise.}
+\item{authority_species_link}{(\code{authoritySpeciesLink}) URL to the
+authority publication or abstract page; Biodiversity Heritage
+Library page-level links are preferred when available; DOIs are
+used for recent publications.}
+\item{type_voucher}{(\code{typeVoucher}) Museum catalogue number(s) of
+the type series (holotype, syntypes, lectotype, or neotype);
+blank when type material has not been verified; multiple syntypes
+are listed when applicable.}
+\item{type_kind}{(\code{typeKind}) Category of type specimen listed in
+\code{type_voucher}: one of \code{"holotype"}, \code{"syntypes"},
+\code{"lectotype"}, \code{"neotype"}, or \code{"nonexistent"} (the last value
+is used when the MDD team has confirmed no type material exists);
+blank when existence of type material has not been verified.}
+\item{type_voucher_ur_is}{(\code{typeVoucherURIs}) Pipe-separated links
+to type material records in external museum collection
+databases.}
+\item{type_locality}{(\code{typeLocality}) Geographic locality where the
+holotype was collected or observed; edited place names follow CMW
+2020 and are updated to current taxonomy; format may not match
+\code{Species_Syn_Current} as standardisation is ongoing.}
+\item{type_locality_latitude}{(\code{typeLocalityLatitude}) Latitude of
+the type locality in decimal degrees; sourced from the original
+description or via georeferencing (web search or GeoLocate).}
+\item{type_locality_longitude}{(\code{typeLocalityLongitude}) Longitude
+of the type locality in decimal degrees; sourced as for
+\code{type_locality_latitude}.}
+\item{nominal_names}{(\code{nominalNames}) Pipe-separated list of all
+available and unavailable specific epithets subsumed under the
+current species concept, each with authority and year; names
+originally described in a different genus are shown in
+parentheses; reasons for unavailability are noted in brackets;
+gender changes are also noted.}
+\item{taxonomy_notes}{(\code{taxonomyNotes}) Semicolon-separated notes
+by MDD staff documenting taxonomic changes.}
+\item{taxonomy_notes_citation}{(\code{taxonomyNotesCitation}) Pipe-
+separated APA citations supporting the changes described in
+\code{taxonomy_notes}.}
+\item{distribution_notes}{(\code{distributionNotes}) Detailed
+distributional narrative including notes on recently introduced
+populations; uses abbreviations: Mt/Mts, I/Is, N, S, E, W, C,
+and combinations (e.g. NW). \strong{Not currently curated — reserved
+for future use.}}
+\item{distribution_notes_citation}{(\code{distributionNotesCitation})
+Pipe-separated citations supporting \code{distribution_notes}.
+\strong{Not currently curated — reserved for future use.}}
+\item{subregion_distribution}{(\code{subregionDistribution}) Pipe-
+separated (\code{|}) list of countries with native or reintroduced
+extant populations; subnational regions (currently US states only)
+are appended in parentheses and comma-separated; uncertain or
+possibly extinct occurrences are marked with \verb{?}.}
+\item{country_distribution}{(\code{countryDistribution}) Pipe-separated
+list of countries where the species has a native or ancient
+(pre-1500 CE) introduced distribution; recent introductions are
+excluded; uncertain presences marked with \verb{?}; domesticated
+species are listed as \code{"Domesticated"}; extinct species reflect
+their post-1500 CE range; marine species list coastal or
+riverine countries.}
+\item{continent_distribution}{(\code{continentDistribution}) Pipe-
+separated list of continents following the same rules as
+\code{country_distribution}; recognised values: \code{Africa}, \code{Antarctica},
+\code{Asia}, \code{Europe}, \verb{North America}, \code{Oceania}, \verb{South America},
+\code{Domesticated}; continental boundaries follow MDD-specific
+definitions (e.g. Asia–Europe split at Ural/Caucasus Mts and
+Ural River; Oceania east of Weber's Line).}
+\item{biogeographic_realm}{(\code{biogeographicRealm}) Pipe-separated
+list of biogeographic realms where the species occurs, following
+the same inclusion rules as \code{country_distribution}; realm
+boundaries follow the WWF schema
+(\url{https://en.wikipedia.org/wiki/Biogeographic_realm}).}
+\item{iucn_status}{(\code{iucnStatus}) IUCN Red List status matched to
+MDD species and updated to current taxonomy (IUCN 2025-2
+assessment); \code{"NE"} = not yet evaluated; standard IUCN acronyms
+otherwise; 19 domestic species are also not evaluated.}
+\item{extinct}{(\code{extinct}) Extinction flag: \code{0} = extant;
+\code{1} = extinct after 1500 CE (following the IUCN criterion).}
+\item{domestic}{(\code{domestic}) Domestication flag: \code{0} = wild;
+\code{1} = domesticated (19 species including \emph{Homo sapiens});
+follows the nomenclatural guidelines of Gentry, Clutton-Brock &
+Groves (2004, \emph{J. Archaeol. Sci.} 31(5): 645–651).}
+\item{flagged}{(\code{flagged}) Taxonomic quality flag: \code{0} = valid;
+\code{1} = flagged as taxonomically questionable or actively debated
+in the literature.}
+\item{cmw_sci_name}{(\code{CMW_sciName}) Genus–epithet key from the
+\emph{Illustrated Checklist of the Mammals of the World} (CMW),
+formatted identically to \code{sci_name}.}
+\item{diff_since_cmw}{(\code{diffSinceCMW}) CMW comparison flag:
+\code{0} = species present in CMW 2020 taxonomy;
+\code{1} = species new since CMW 2020.}
+\item{msw3_matchtype}{(\code{MSW3_matchtype}) Method by which the taxon
+was linked to MSW3: one of \code{"matched"}, \code{"unmatched"}, or
+\code{"manual"}.}
+\item{msw3_sci_name}{(\code{MSW3_sciName}) Scientific name as matched
+to the MSW3 taxonomy.}
+\item{diff_since_msw3}{(\code{diffSinceMSW3}) MSW3 comparison flag:
+\code{0} = species present in MSW3 (~2004 cutoff);
+\code{1} = species new since MSW3.}
+}
 }
 \source{
-Mammal Diversity Database release archive; field definitions are
-summarized from \code{META_v2.4.csv}.
+Mammal Diversity Database release archive
+(\url{https://www.mammaldiversity.org}). Field definitions are derived
+from the \code{META_v2.4.csv} file and the column-level annotations in the
+\code{MDD_Current} sheet of the official MDD spreadsheet.
 }
 \usage{
 mdd_checklist
 }
 \description{
 Current species-level checklist from the Mammal Diversity Database (MDD).
-This dataset is generated from the release file matching
-\code{MDD_...species.csv} and stores one row per currently recognized species.
 }
 \details{
-According to \code{META_v2.4.csv}, the checklist includes these main
-column groups: identifiers (\code{sci_name}, \code{id}, \code{phylosort}); taxonomic
-classification from subclass to genus and species epithet; authority and
-original-combination fields; type specimen and type locality fields;
-nomenclatural and taxonomic notes; native distribution summaries at
-subregion, country, continent, and biogeographic realm scales; conservation
-and status flags (\code{iucn_status}, \code{extinct}, \code{domestic}, \code{flagged}); and
-cross-release comparison fields linking the checklist to CMW and MSW3.
+The checklist is the primary tabular output of the MDD and covers all
+extant and recently extinct (post-1500 CE) mammal species recognised
+by the database curators. Column names have been normalised from the
+original camelCase (\code{sciName}, \code{mainCommonName}, etc.) to \code{snake_case}
+during data import; the original names are shown in parentheses in
+each \verb{\\item} above for cross-reference with the upstream spreadsheet.
 
-Key examples include \code{sci_name} as the underscore-delimited species key used
-by MDD, \code{main_common_name} and \code{other_common_names} for vernacular names,
-\code{authority_species_author} and \code{authority_species_year} for species
-authority, \code{type_voucher} and \code{type_kind} for type material, and
-\code{country_distribution} and \code{continent_distribution} for summarized native
-range.
+Distribution fields operate on three nested spatial scales:
+\code{subregion_distribution} (subnational units, currently US states),
+\code{country_distribution}, and \code{continent_distribution}. Multiple values
+within each field are pipe-separated (\code{|}). Only native ranges and
+ancient introductions (before 1500 CE) are included; \verb{?} marks
+uncertain or possibly extirpated occurrences.
+
+The \code{distribution_notes} and \code{distribution_notes_citation} columns
+are present in the data but are \strong{not currently curated} and are
+reserved for future use.
+
+Cross-release comparison is provided by three column pairs:
+\code{cmw_sci_name} / \code{diff_since_cmw} (vs. CMW 2020) and
+\code{msw3_sci_name} / \code{msw3_matchtype} / \code{diff_since_msw3}
+(vs. MSW3, ~2004 cutoff).
 }
 \keyword{datasets}

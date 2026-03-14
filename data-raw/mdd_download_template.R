@@ -53,11 +53,17 @@ extract_path <- function(rel_path) {
 }
 
 find_member <- function(pattern, required = TRUE, prefix = release_root) {
-  hits <- zip_listing$Name[str_detect(zip_listing$Name, regex(pattern, ignore_case = TRUE))]
+  hits <- zip_listing$Name[str_detect(
+    zip_listing$Name,
+    regex(pattern, ignore_case = TRUE)
+  )]
 
   if (length(hits) == 0) {
     if (required) {
-      stop(paste0("Required file not found in MDD archive: ", pattern), call. = FALSE)
+      stop(
+        paste0("Required file not found in MDD archive: ", pattern),
+        call. = FALSE
+      )
     }
     return(NA_character_)
   }
@@ -88,26 +94,34 @@ parse_release_toml <- function(path) {
 
 checklist_file <- find_member("(^|/)MDD_.*species\\.csv$")
 synonym_file <- find_member("(^|/)Species_Syn_.*\\.csv$")
-type_file <- find_member("(^|/)TypeSpecimenMetadata_.*\\.csv$", required = FALSE)
+type_file <- find_member(
+  "(^|/)TypeSpecimenMetadata_.*\\.csv$",
+  required = FALSE
+)
 diff_file <- find_member("(^|/)Diff_v.*\\.csv$", required = FALSE)
-diff_all_file <- find_member("(^|/)Diff-AllChanges_v.*\\.csv$", required = FALSE)
+diff_all_file <- find_member(
+  "(^|/)Diff-AllChanges_v.*\\.csv$",
+  required = FALSE
+)
 meta_file <- find_member("(^|/)META_v.*\\.csv$", required = FALSE)
 release_file <- find_member("(^|/)release\\.toml$", required = FALSE)
 
 cli_alert_info("Processing current checklist from {.file {checklist_file}}...")
 checklist_file
-mdd_checklist <- read_csv_release(checklist_file)|> 
+mdd_checklist <- read_csv_release(checklist_file) |>
   janitor::clean_names()
 mdd_checklist
 
 cli_alert_info("Processing synonym table from {.file {synonym_file}}...")
-mdd_synonyms <- read_csv_release(synonym_file) |> 
+mdd_synonyms <- read_csv_release(synonym_file) |>
   janitor::clean_names()
 mdd_synonyms
 
 if (!is.na(type_file)) {
-  cli_alert_info("Processing type specimen metadata from {.file {type_file}}...")
-  mdd_type_specimen_metadata <- read_csv_release(type_file) |> 
+  cli_alert_info(
+    "Processing type specimen metadata from {.file {type_file}}..."
+  )
+  mdd_type_specimen_metadata <- read_csv_release(type_file) |>
     janitor::clean_names()
 }
 mdd_type_specimen_metadata
@@ -130,7 +144,11 @@ usethis::use_data(mdd_checklist, compress = "xz", overwrite = TRUE)
 usethis::use_data(mdd_synonyms, compress = "xz", overwrite = TRUE)
 
 if (exists("mdd_type_specimen_metadata")) {
-  usethis::use_data(mdd_type_specimen_metadata, compress = "xz", overwrite = TRUE)
+  usethis::use_data(
+    mdd_type_specimen_metadata,
+    compress = "xz",
+    overwrite = TRUE
+  )
 }
 
 release_metadata <- parse_release_toml(release_file)
@@ -142,9 +160,9 @@ metadata <- list(
   downloaded_at = as.character(Sys.Date()),
   archive_file = basename(source_url),
   archive_members = zip_listing$Name[
-    str_detect(zip_listing$Name, "^MDD/") &          # solo carpeta MDD/
-      !str_detect(zip_listing$Name, "^__MACOSX") &     # excluir metadata macOS
-      !str_ends(zip_listing$Name, "/")                 # excluir directorios
+    str_detect(zip_listing$Name, "^MDD/") & # solo carpeta MDD/
+      !str_detect(zip_listing$Name, "^__MACOSX") & # excluir metadata macOS
+      !str_ends(zip_listing$Name, "/") # excluir directorios
   ],
   checklist_file = checklist_file,
   checklist_rows = nrow(mdd_checklist),

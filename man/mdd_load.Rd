@@ -15,3 +15,7 @@ A tibble.
 \description{
 Load an MDD comma-separated export
 }
+\examples{
+sample_path <- system.file("extdata", "mdd_sample.csv", package = "rmdd")
+mdd_load(sample_path)
+}

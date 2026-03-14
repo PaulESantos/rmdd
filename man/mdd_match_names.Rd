@@ -2,32 +2,42 @@
 % Please edit documentation in R/mdd-match.R
 \name{mdd_match_names}
 \alias{mdd_match_names}
-\title{Match mammal names against an MDD table}
+\title{Match names against a reference table}
 \usage{
 mdd_match_names(
   names,
   data,
-  name_col = "scientificName",
-  max_distance = 0.1,
-  method = c("exact", "agrep")
+  column = "scientificName",
+  method = c("exact", "agrep"),
+  max_distance = 0.1
 )
 }
 \arguments{
-\item{names}{Character vector of names to resolve.}
+\item{names}{Character vector of names to match.}
 
-\item{data}{A data frame or tibble containing an MDD name column.}
+\item{data}{Data frame containing a column of candidate names.}
 
-\item{name_col}{Column in \code{data} containing candidate names.}
+\item{column}{Name of the candidate-name column in \code{data}.}
 
-\item{max_distance}{Maximum normalized distance accepted for approximate
-matches. Ignored for exact matching.}
+\item{method}{Matching method. Supported values are \code{"exact"} and \code{"agrep"}.}
 
-\item{method}{Matching method. One of \code{"exact"} or \code{"agrep"}.}
+\item{max_distance}{Maximum distance passed to \code{\link[=agrep]{agrep()}} when
+\code{method = "agrep"}.}
 }
 \value{
-A tibble with submitted names, matched names, match status, and
-distance.
+A tibble with \code{input_name}, \code{matched_name}, and \code{match_status}.
 }
 \description{
-Match mammal names against an MDD table
+Compatibility wrapper for the original \code{rmdd} matching interface used by the
+package tests. It performs exact matching first and, when requested, a
+simple approximate lookup against a column of candidate scientific names.
+}
+\examples{
+sample_path <- system.file("extdata", "mdd_sample.csv", package = "rmdd")
+mdd_tbl <- mdd_load(sample_path)
+mdd_match_names(
+  names = c("Puma concolor", "Puma concolr"),
+  data = mdd_tbl,
+  method = "agrep"
+)
 }

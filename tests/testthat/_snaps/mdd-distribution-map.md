@@ -25,7 +25,7 @@
       v Mapped 22 of 23 distribution units.
     Condition
       Warning:
-      1 distribution unit could not be located in world-atlas.
+      1 distribution unit could not be located in rnaturalearth.
       ! 1 unit remains unresolved.
     Message
       * "French Guiana"

@@ -16,10 +16,21 @@ mdd_distribution_map(
   xlim = NULL,
   ylim = NULL,
   quiet = FALSE,
-  base_fill = "#4B4742",
-  dist_fill = "#A9BD4F",
-  border_color = "#C9D56F",
-  ocean_fill = "#32373A"
+  title = NULL,
+  base_fill = "#E8E4DB",
+  dist_fill = "#111111",
+  border_color = "#111111",
+  country_color = "#8B887F",
+  ocean_fill = "#F7F4EE",
+  plot_fill = "#F7F4EE",
+  graticule_color = "#BBB5A8",
+  graticule_linewidth = 0.18,
+  graticule_alpha = 0.55,
+  country_linewidth = 0.22,
+  dist_linewidth = 0.34,
+  title_color = "#111111",
+  title_size = 16,
+  title_face = "bold"
 )
 }
 \arguments{
@@ -33,7 +44,7 @@ mdd_distribution_map(
 \code{\link[=build_mdd_match_backbone]{build_mdd_match_backbone()}}.}
 
 \item{atlas}{Optional \code{sf} object with world country polygons. Defaults to
-the packaged \code{world-atlas} countries layer.}
+\code{rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")}.}
 
 \item{max_dist}{Maximum string distance used if the input name needs fuzzy
 reconciliation.}
@@ -49,13 +60,35 @@ the mapped distribution extent, or \code{"manual"} to use \code{xlim} and \code{
 
 \item{quiet}{Logical. If \code{TRUE}, suppress \code{cli} progress messages.}
 
+\item{title}{Optional plot title. Defaults to the accepted taxon name.}
+
 \item{base_fill}{Fill color for non-selected countries.}
 
 \item{dist_fill}{Fill color for mapped distribution units.}
 
-\item{border_color}{Border color for country outlines.}
+\item{border_color}{Border color for mapped country outlines.}
+
+\item{country_color}{Border color for non-selected country outlines.}
 
 \item{ocean_fill}{Background color for the map panel.}
+
+\item{plot_fill}{Background color for the full plot area.}
+
+\item{graticule_color}{Color for graticule lines.}
+
+\item{graticule_linewidth}{Line width for graticule lines.}
+
+\item{graticule_alpha}{Alpha level for graticule lines.}
+
+\item{country_linewidth}{Line width for non-selected country outlines.}
+
+\item{dist_linewidth}{Line width for mapped country outlines.}
+
+\item{title_color}{Color for the plot title.}
+
+\item{title_size}{Size of the plot title.}
+
+\item{title_face}{Font face for the plot title.}
 }
 \value{
 A \code{ggplot2} map object. Additional metadata are attached in the
@@ -63,8 +96,14 @@ A \code{ggplot2} map object. Additional metadata are attached in the
 }
 \description{
 Resolve a mammal name with \code{\link[=mdd_matching]{mdd_matching()}} and map its
-\code{country_distribution} values against a local \code{world-atlas} countries layer.
+\code{country_distribution} values against an \code{rnaturalearth} countries layer.
 The function preserves the package's exact vs partial input validation by
 reporting whether the taxon input was matched directly or through a fuzzy
-stage before plotting the accepted taxon distribution.
+stage before plotting the accepted taxon distribution. Spatial polygons come
+from Natural Earth through \code{rnaturalearth::ne_countries()}.
+}
+\examples{
+if (interactive()) {
+  mdd_distribution_map("Lama vicugna", quiet = TRUE)
+}
 }

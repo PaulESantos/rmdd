@@ -21,3 +21,11 @@ The downloaded file path, invisibly.
 \description{
 Download a Mammal Diversity Database file
 }
+\examples{
+if (interactive()) {
+  mdd_download(
+    url = "https://www.mammaldiversity.org/robots.txt",
+    dest_dir = tempdir()
+  )
+}
+}

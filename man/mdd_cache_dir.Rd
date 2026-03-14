@@ -15,3 +15,6 @@ A scalar character path.
 \description{
 Return the default rmdd cache directory
 }
+\examples{
+mdd_cache_dir(tempdir())
+}

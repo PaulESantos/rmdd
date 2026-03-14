@@ -70,7 +70,11 @@ test_that("mdd_taxon_info returns structured local information", {
     mdd_specific_epithet = c("concolor")
   )
 
-  info <- mdd_taxon_info("Puma concolor", checklist = checklist, synonyms = synonyms)
+  info <- mdd_taxon_info(
+    "Puma concolor",
+    checklist = checklist,
+    synonyms = synonyms
+  )
 
   expect_s3_class(info, "mdd_taxon_info")
   expect_true(info$matched)
@@ -97,10 +101,51 @@ test_that("mdd_taxon_info returns unmatched object when no taxon is found", {
     mdd_author = character()
   )
 
-  info <- mdd_taxon_info("Not_a_real_name", checklist = checklist, synonyms = synonyms)
+  info <- mdd_taxon_info(
+    "Not_a_real_name",
+    checklist = checklist,
+    synonyms = synonyms
+  )
 
   expect_s3_class(info, "mdd_taxon_info")
   expect_false(info$matched)
   expect_null(info$taxon)
   expect_equal(nrow(info$synonyms), 0)
+})
+
+
+test_that("mdd_taxon_record returns accepted record and linked synonyms", {
+  checklist <- tibble::tibble(
+    id = c(1006017),
+    sci_name = c("Puma_concolor"),
+    genus = c("Puma"),
+    specific_epithet = c("concolor"),
+    authority_species_author = c("Linnaeus")
+  )
+
+  synonyms <- tibble::tibble(
+    mdd_syn_id = c("100004688"),
+    mdd_species_id = c("1006017"),
+    mdd_root_name = c("concolor"),
+    mdd_author = c("Linnaeus"),
+    mdd_year = c(1771),
+    mdd_nomenclature_status = c("available"),
+    mdd_validity = c("species"),
+    mdd_original_combination = c("Felis concolor"),
+    mdd_order = c("Carnivora"),
+    mdd_family = c("Felidae"),
+    mdd_genus = c("Puma"),
+    mdd_specific_epithet = c("concolor")
+  )
+
+  out <- mdd_taxon_record(
+    name = "Felis concolor",
+    checklist = checklist,
+    synonyms = synonyms
+  )
+
+  expect_s3_class(out, "mdd_taxon_record")
+  expect_true(out$matched)
+  expect_equal(out$accepted_id, "1006017")
+  expect_equal(nrow(out$synonym_tbl), 1)
 })

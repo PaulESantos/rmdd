@@ -38,3 +38,6 @@ The workflow prioritizes exact evidence first, then progressively relaxes
 criteria through exact genus, fuzzy genus, exact species-within-genus, and
 fuzzy species-within-genus matching.
 }
+\examples{
+mdd_matching(c("Puma concolor", "Felis concolor", "Pumma concolor"))
+}

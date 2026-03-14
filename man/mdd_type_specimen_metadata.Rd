@@ -5,18 +5,63 @@
 \alias{mdd_type_specimen_metadata}
 \title{Mammal Diversity Database type specimen metadata}
 \format{
-A tibble with one row per type specimen metadata record and cleaned
-snake_case column names.
+A tibble with 138 rows and 5 variables, with source column names
+normalized to \code{snake_case} during data import:
+
+\describe{
+\item{abbreviation}{Standard acronym or abbreviation used to identify
+the collection in the MDD and broader taxonomic literature (e.g.
+\code{"AMNH"}, \code{"MNHN"}, \code{"USNM"}); corresponds to the collection codes
+cited in the \code{mdd_holotype} and \code{mdd_type_specimen_link} fields of
+\code{mdd_synonyms}.}
+\item{full_name}{Full official name of the institution or collection
+(e.g. \code{"American Museum of Natural History"},
+\code{"Museum National d'Histoire Naturelle"}).}
+\item{city_and_country}{City and country where the institution is
+located, formatted as \code{"City, Country"} (e.g.
+\code{"New York, United States of America"}).}
+\item{synonyms_notes}{Alternative or historical names by which the
+collection has been known in the synonymic literature (e.g.
+\code{"British Museum (Natural History)"} for \code{BM},
+\code{"United States National Museum"} for \code{USNM}); \code{NA} when no
+alternative name is recorded.}
+\item{online_website_database_if_available}{URL to the institution's
+online specimen database or collection portal, when publicly
+available; \code{NA} when no online resource has been identified.}
+}
 }
 \source{
-Mammal Diversity Database release archive.
+Mammal Diversity Database release archive
+(\url{https://www.mammaldiversity.org}), distributed as
+\code{TypeSpecimenMetadata_...csv} within each versioned release.
 }
 \usage{
 mdd_type_specimen_metadata
 }
 \description{
-Auxiliary table of museum and type specimen metadata distributed with an MDD
-release. This dataset is generated from the release file matching
-\code{TypeSpecimenMetadata_...csv} when present.
+Auxiliary reference table of natural history museum collection metadata
+distributed with an MDD release. Each row corresponds to one institution
+that holds or has held type material cited in the MDD synonym table
+(\code{mdd_synonyms}).
+}
+\details{
+This table serves as a lookup reference linking collection abbreviations
+used throughout \code{mdd_synonyms} to their full institutional names,
+geographic locations, and online portals. It covers 138 institutions
+spanning all major zoogeographic regions, from large international
+collections such as AMNH, MNHN, and USNM to regional and national
+natural history museums in Latin America, Asia, Africa, and Oceania.
+
+The \code{synonyms_notes} column documents historical or colloquial collection
+names that may appear in older taxonomic literature, aiding users who
+encounter non-standard abbreviations in pre-MDD sources. Notable examples
+include \code{BM} (formerly \emph{British Museum (Natural History)}), \code{MCZ}
+(\emph{Museum of Comparative Zoology, Harvard}), and \code{ZMA} (\emph{Zoölogisch Museum,
+Amsterdam}, merged with RMNH in 2010).
+
+URLs in \code{online_website_database_if_available} link directly to
+mammalogy or specimen-search pages where possible, and to general
+institutional pages otherwise. Link availability and validity may
+change over time.
 }
 \keyword{datasets}

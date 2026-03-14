@@ -5,7 +5,11 @@ test_that("mdd_distribution_summary aggregates country diversity", {
     family = c("F1", "F2", "F3"),
     genus = c("A", "B", "C"),
     country_distribution = c("Peru|Chile", "Peru", "Chile"),
-    continent_distribution = c("South America", "South America", "South America"),
+    continent_distribution = c(
+      "South America",
+      "South America",
+      "South America"
+    ),
     subregion_distribution = c("Peru(CUS)|Chile", "Peru(LIM)", "Chile"),
     extinct = c(0, 1, 0),
     domestic = c(0, 0, 0)
@@ -34,7 +38,11 @@ test_that("mdd_distribution_summary excludes domesticated and widespread species
     family = c("F1", "F2", "F3"),
     genus = c("A", "B", "C"),
     country_distribution = c("Peru|Chile|Bolivia", "Peru", "Chile"),
-    continent_distribution = c("South America", "South America", "South America"),
+    continent_distribution = c(
+      "South America",
+      "South America",
+      "South America"
+    ),
     subregion_distribution = c("Peru|Chile|Bolivia", "Peru", "Chile"),
     extinct = c(0, 0, 0),
     domestic = c(0, 1, 0)
@@ -59,4 +67,24 @@ test_that("mdd_distribution_summary errors clearly for bad thresholds", {
   expect_snapshot(error = TRUE, {
     mdd_distribution_summary(widespread_threshold = 0)
   })
+})
+
+
+test_that("mdd_distribution_summary_raw keeps all rows by default", {
+  checklist <- tibble::tibble(
+    sci_name = c("A_a", "B_b"),
+    order = c("O1", "O1"),
+    family = c("F1", "F2"),
+    genus = c("A", "B"),
+    country_distribution = c("Peru|Chile|Bolivia", "Peru"),
+    continent_distribution = c("South America", "South America"),
+    subregion_distribution = c("Peru|Chile|Bolivia", "Peru"),
+    extinct = c(0, 0),
+    domestic = c(0, 1)
+  )
+
+  out <- mdd_distribution_summary_raw("country", checklist = checklist)
+
+  expect_equal(out$region, c("Peru", "Bolivia", "Chile"))
+  expect_equal(out$total_species[out$region == "Peru"], 2)
 })

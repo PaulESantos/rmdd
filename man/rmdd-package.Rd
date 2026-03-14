@@ -12,13 +12,14 @@ taxonomic names against the Mammal Diversity Database.
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://github.com/PaulESantos/rmdd}
   \item \url{https://www.mammaldiversity.org/}
-  \item Report bugs at \url{https://www.mammaldiversity.org/}
+  \item Report bugs at \url{https://github.com/PaulESantos/rmdd/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Package Maintainer \email{your_email@example.com}
+\strong{Maintainer}: Paul E. Santos Andrade \email{paulefrens@gmail.com} [copyright holder]
 
 }
 \keyword{internal}

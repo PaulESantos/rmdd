@@ -7,8 +7,8 @@
 mdd_distribution_summary(
   level = c("country", "continent", "subregion"),
   checklist = NULL,
-  exclude_domesticated = TRUE,
-  exclude_widespread = TRUE,
+  exclude_domesticated = FALSE,
+  exclude_widespread = FALSE,
   widespread_threshold = NULL
 )
 }
@@ -35,8 +35,13 @@ A tibble with one row per geographic unit and the columns \code{region},
 \code{total_species}.
 }
 \description{
-Expand MDD distribution fields and compute diversity summaries by
-geographic unit. The summary reports counts of distinct orders, families,
-genera, living species, and extinct species for each unit listed in the
-selected MDD distribution column.
+Wrapper around \code{\link[=mdd_distribution_summary_raw]{mdd_distribution_summary_raw()}} that optionally excludes
+domesticated species and species considered widespread at the requested
+geographic level.
+}
+\examples{
+mdd_distribution_summary(
+  level = "country",
+  checklist = dplyr::slice(mdd_checklist, 1:50)
+)
 }

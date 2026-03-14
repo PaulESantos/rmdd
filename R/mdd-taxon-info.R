@@ -15,64 +15,58 @@
 #' @param method Distance method passed to [mdd_matching()].
 #'
 #' @return An object of class `mdd_taxon_info`.
+#' @examples
+#' x <- mdd_taxon_info("Puma concolor")
+#' x
+#' as.list(x)
 #' @export
-mdd_taxon_info <- function(name,
-                           checklist = NULL,
-                           synonyms = NULL,
-                           target_df = NULL,
-                           max_dist = 1,
-                           method = "osa") {
-  if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(stringr::str_squish(name))) {
-    rlang::abort("`name` must be a single non-empty character string.")
-  }
-
-  checklist <- checklist %||% .mdd_default_dataset("mdd_checklist")
-  synonyms <- synonyms %||% .mdd_default_dataset("mdd_synonyms")
-  target_df <- target_df %||% build_mdd_match_backbone(checklist = checklist, synonyms = synonyms)
-
-  match_tbl <- mdd_matching(
-    x = name,
+mdd_taxon_info <- function(
+  name,
+  checklist = NULL,
+  synonyms = NULL,
+  target_df = NULL,
+  max_dist = 1,
+  method = "osa"
+) {
+  record <- mdd_taxon_record(
+    name = name,
+    checklist = checklist,
+    synonyms = synonyms,
     target_df = target_df,
-    prefilter_genus = TRUE,
-    allow_duplicates = TRUE,
     max_dist = max_dist,
     method = method
   )
 
-  match_row <- match_tbl[1, , drop = FALSE]
-
-  if (!isTRUE(match_row$matched[[1]])) {
+  if (!isTRUE(record$matched)) {
     out <- list(
-      query = name,
+      query = record$query,
       matched = FALSE,
-      match = tibble::as_tibble(match_row),
+      match = record$match,
       taxon = NULL,
       sections = list(),
       synonyms = tibble::tibble(),
-      url = NA_character_
+      url = record$url
     )
     class(out) <- "mdd_taxon_info"
     return(out)
   }
 
-  accepted_id <- as.character(match_row$accepted_id[[1]])
-  taxon_tbl <- checklist |>
-    dplyr::filter(as.character(id) == accepted_id) |>
-    dplyr::slice_head(n = 1)
-
-  synonym_tbl <- synonyms |>
-    dplyr::filter(as.character(mdd_species_id) == accepted_id)
-
-  taxon_row <- if (nrow(taxon_tbl) == 0) NULL else as.list(taxon_tbl[1, , drop = FALSE])
+  taxon_tbl <- record$taxon_tbl
+  synonym_tbl <- record$synonym_tbl
+  taxon_row <- if (nrow(taxon_tbl) == 0) {
+    NULL
+  } else {
+    as.list(taxon_tbl[1, , drop = FALSE])
+  }
 
   out <- list(
-    query = name,
+    query = record$query,
     matched = TRUE,
-    match = tibble::as_tibble(match_row),
+    match = record$match,
     taxon = taxon_row,
     sections = .mdd_taxon_sections(taxon_tbl, synonym_tbl),
     synonyms = synonym_tbl,
-    url = paste0("https://www.mammaldiversity.org/taxon/", accepted_id, "/")
+    url = record$url
   )
 
   class(out) <- "mdd_taxon_info"
@@ -93,7 +87,9 @@ print.mdd_taxon_info <- function(x, ...) {
 
   cli::cli_h1(as.character(match_row$accepted_name[[1]]))
   cli::cli_text("Query: {.val {x$query}}")
-  cli::cli_text("Matched name: {.val {match_row$matched_name[[1]]}} ({match_row$taxon_status[[1]]})")
+  cli::cli_text(
+    "Matched name: {.val {match_row$matched_name[[1]]}} ({match_row$taxon_status[[1]]})"
+  )
   cli::cli_text("Taxon URL: {.url {x$url}}")
 
   if (!is.null(taxon)) {
@@ -140,7 +136,9 @@ print.mdd_taxon_info <- function(x, ...) {
     cli::cli_h2("Names and Synonyms")
     print(preview)
     if (nrow(x$synonyms) > 8) {
-      cli::cli_text("... and {.val {nrow(x$synonyms) - 8}} more synonym records")
+      cli::cli_text(
+        "... and {.val {nrow(x$synonyms) - 8}} more synonym records"
+      )
     }
   }
 
@@ -174,7 +172,8 @@ print.mdd_taxon_info <- function(x, ...) {
       genus = get_col("genus"),
       subgenus = get_col("subgenus"),
       specific_epithet = get_col("specific_epithet"),
-      sci_name = get_col("sci_name")
+      subspecies = get_col("subspecies"),
+      sci_name = gsub("_", " ", get_col("sci_name"), fixed = TRUE)
     )),
     authority = .compact_named_list(list(
       authority_species_author = get_col("authority_species_author"),
@@ -216,12 +215,20 @@ print.mdd_taxon_info <- function(x, ...) {
 }
 
 .compact_named_list <- function(x) {
-  keep <- vapply(x, function(val) {
-    if (length(val) == 0 || is.null(val)) return(FALSE)
-    if (all(is.na(val))) return(FALSE)
-    txt <- stringr::str_squish(as.character(val[[1]]))
-    nzchar(txt) && !identical(txt, "NA")
-  }, logical(1))
+  keep <- vapply(
+    x,
+    function(val) {
+      if (length(val) == 0 || is.null(val)) {
+        return(FALSE)
+      }
+      if (all(is.na(val))) {
+        return(FALSE)
+      }
+      txt <- stringr::str_squish(as.character(val[[1]]))
+      nzchar(txt) && !identical(txt, "NA")
+    },
+    logical(1)
+  )
 
   x[keep]
 }
@@ -234,7 +241,9 @@ print.mdd_taxon_info <- function(x, ...) {
   cli::cli_h2(title)
   bullets <- vapply(
     names(values),
-    function(nm) paste0(.mdd_cli_label(nm), ": {.val ", .mdd_cli_value(values[[nm]]), "}"),
+    function(nm) {
+      paste0(.mdd_cli_label(nm), ": {.val ", .mdd_cli_value(values[[nm]]), "}")
+    },
     character(1)
   )
   cli::cli_ul(bullets)
@@ -255,11 +264,20 @@ print.mdd_taxon_info <- function(x, ...) {
 }
 
 .mdd_list_get <- function(x, name) {
-  if (is.null(x[[name]])) return(NA)
+  if (is.null(x[[name]])) {
+    return(NA)
+  }
   x[[name]]
 }
 
 .mdd_tbl_get <- function(tbl, name) {
-  if (!name %in% names(tbl)) return(NA)
+  if (!name %in% names(tbl)) {
+    return(NA)
+  }
   tbl[[name]]
+}
+
+#' @export
+as.list.mdd_taxon_info <- function(x, ...) {
+  unclass(x)
 }

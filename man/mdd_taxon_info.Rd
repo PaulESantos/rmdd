@@ -37,3 +37,8 @@ object built from \code{mdd_checklist} and \code{mdd_synonyms}, including the ac
 taxon record, synonym records, and grouped sections that mirror the main
 information shown in MDD species pages.
 }
+\examples{
+x <- mdd_taxon_info("Puma concolor")
+x
+as.list(x)
+}

@@ -1,16 +1,17 @@
 Package: rmdd
-Title: Tools for Name Resolution with the Mammal Diversity Database
-Version: 0.0.0.9000
+Title: Resolve Mammal Names with the Mammal Diversity Database
+Version: 0.0.0.1
 Authors@R: 
-    person("Package", "Maintainer", , "your_email@example.com", role = c("aut", "cre"))
-Description: Provides a starting framework for a tidyverse-style package
-    that downloads, reads, validates, and matches mammal taxonomic names
-    against the Mammal Diversity Database (MDD). The package is designed
-    to support a mammal-focused workflow analogous to plant-oriented
-    taxonomic name resolution services.
+    person("Paul E.", "Santos Andrade", , "paulefrens@gmail.com",
+           role = c("aut", "cre", "cph"))
+Description: Download, inspect, reconcile, and summarize mammal taxonomic
+    names with the Mammal Diversity Database (MDD). Supports accepted
+    names, synonyms, original combinations, distribution summaries, and
+    mapped outputs derived from packaged MDD releases. Designed for
+    reproducible mammal name resolution workflows in 'R'.
 License: MIT + file LICENSE
-URL: https://www.mammaldiversity.org/
-BugReports: https://www.mammaldiversity.org/
+URL: https://github.com/PaulESantos/rmdd, https://www.mammaldiversity.org/
+BugReports: https://github.com/PaulESantos/rmdd/issues
 Depends: 
     R (>= 4.3.0)
 Imports: 
@@ -20,6 +21,7 @@ Imports:
     ggplot2,
     fuzzyjoin,
     readr,
+    rnaturalearth,
     sf,
     rlang,
     stringr,
@@ -32,6 +34,7 @@ Suggests:
     lintr,
     pkgdown,
     rmarkdown,
+    rnaturalearthdata,
     roxygen2,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

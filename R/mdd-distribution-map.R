@@ -1,10 +1,11 @@
 #' Generate a distribution map from MDD country distributions
 #'
 #' Resolve a mammal name with [mdd_matching()] and map its
-#' `country_distribution` values against a local `world-atlas` countries layer.
+#' `country_distribution` values against an `rnaturalearth` countries layer.
 #' The function preserves the package's exact vs partial input validation by
 #' reporting whether the taxon input was matched directly or through a fuzzy
-#' stage before plotting the accepted taxon distribution.
+#' stage before plotting the accepted taxon distribution. Spatial polygons come
+#' from Natural Earth through `rnaturalearth::ne_countries()`.
 #'
 #' @param name A single scientific name.
 #' @param checklist Optional checklist data frame. Defaults to `mdd_checklist`.
@@ -12,7 +13,7 @@
 #' @param target_df Optional reconciliation backbone from
 #'   [build_mdd_match_backbone()].
 #' @param atlas Optional `sf` object with world country polygons. Defaults to
-#'   the packaged `world-atlas` countries layer.
+#'   `rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")`.
 #' @param max_dist Maximum string distance used if the input name needs fuzzy
 #'   reconciliation.
 #' @param method Distance method passed to [mdd_matching()].
@@ -21,30 +22,63 @@
 #' @param xlim Optional longitude limits used when `zoom = "manual"`.
 #' @param ylim Optional latitude limits used when `zoom = "manual"`.
 #' @param quiet Logical. If `TRUE`, suppress `cli` progress messages.
+#' @param title Optional plot title. Defaults to the accepted taxon name.
 #' @param base_fill Fill color for non-selected countries.
 #' @param dist_fill Fill color for mapped distribution units.
-#' @param border_color Border color for country outlines.
+#' @param border_color Border color for mapped country outlines.
+#' @param country_color Border color for non-selected country outlines.
 #' @param ocean_fill Background color for the map panel.
+#' @param plot_fill Background color for the full plot area.
+#' @param graticule_color Color for graticule lines.
+#' @param graticule_linewidth Line width for graticule lines.
+#' @param graticule_alpha Alpha level for graticule lines.
+#' @param country_linewidth Line width for non-selected country outlines.
+#' @param dist_linewidth Line width for mapped country outlines.
+#' @param title_color Color for the plot title.
+#' @param title_size Size of the plot title.
+#' @param title_face Font face for the plot title.
 #'
 #' @return A `ggplot2` map object. Additional metadata are attached in the
 #'   `"mdd_distribution_info"` attribute.
+#' @examples
+#' if (interactive()) {
+#'   mdd_distribution_map("Lama vicugna", quiet = TRUE)
+#' }
 #' @export
-mdd_distribution_map <- function(name,
-                                 checklist = NULL,
-                                 synonyms = NULL,
-                                 target_df = NULL,
-                                 atlas = NULL,
-                                 max_dist = 1,
-                                 method = "osa",
-                                 zoom = c("world", "auto", "manual"),
-                                 xlim = NULL,
-                                 ylim = NULL,
-                                 quiet = FALSE,
-                                 base_fill = "#4B4742",
-                                 dist_fill = "#A9BD4F",
-                                 border_color = "#C9D56F",
-                                 ocean_fill = "#32373A") {
-  if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(stringr::str_squish(name))) {
+mdd_distribution_map <- function(
+  name,
+  checklist = NULL,
+  synonyms = NULL,
+  target_df = NULL,
+  atlas = NULL,
+  max_dist = 1,
+  method = "osa",
+  zoom = c("world", "auto", "manual"),
+  xlim = NULL,
+  ylim = NULL,
+  quiet = FALSE,
+  title = NULL,
+  base_fill = "#E8E4DB",
+  dist_fill = "#111111",
+  border_color = "#111111",
+  country_color = "#8B887F",
+  ocean_fill = "#F7F4EE",
+  plot_fill = "#F7F4EE",
+  graticule_color = "#BBB5A8",
+  graticule_linewidth = 0.18,
+  graticule_alpha = 0.55,
+  country_linewidth = 0.22,
+  dist_linewidth = 0.34,
+  title_color = "#111111",
+  title_size = 16,
+  title_face = "bold"
+) {
+  if (
+    !is.character(name) ||
+      length(name) != 1L ||
+      is.na(name) ||
+      !nzchar(stringr::str_squish(name))
+  ) {
     cli::cli_abort(c(
       "{.arg name} must be a single non-empty character string.",
       "x" = "You supplied {.obj_type_friendly {name}}."
@@ -54,8 +88,7 @@ mdd_distribution_map <- function(name,
   zoom <- match.arg(zoom)
   checklist <- checklist %||% .mdd_default_dataset("mdd_checklist")
   synonyms <- synonyms %||% .mdd_default_dataset("mdd_synonyms")
-  target_df <- target_df %||% build_mdd_match_backbone(checklist = checklist, synonyms = synonyms)
-  atlas <- atlas %||% .mdd_default_world_atlas()
+  atlas <- atlas %||% .mdd_default_world_sf()
 
   match_tbl <- mdd_matching(
     x = name,
@@ -94,7 +127,7 @@ mdd_distribution_map <- function(name,
 
   if (length(selected_names) == 0) {
     cli::cli_abort(c(
-      "No {.field country_distribution} units could be matched to the packaged {.pkg world-atlas} layer.",
+      "No {.field country_distribution} units could be matched to the {.pkg rnaturalearth} layer.",
       "i" = "Inspect the attached distribution metadata to review unresolved place names."
     ))
   }
@@ -121,50 +154,49 @@ mdd_distribution_map <- function(name,
     )
   }
 
-  subtitle <- paste0(
-    "Input match: ", input_match,
-    " | mapped units: ", length(selected_names), "/", nrow(mapped_units),
-    " | zoom: ", zoom_info$mode
-  )
-
-  caption <- paste(
-    "Source: Mammal Diversity Database country_distribution + topojson/world-atlas countries-10m.",
-    if (nrow(unresolved_units) > 0) {
-      paste0(
-        "Unmapped units: ",
-        paste(utils::head(unresolved_units$clean_country, 6), collapse = ", "),
-        if (nrow(unresolved_units) > 6) ", ..." else ""
-      )
-    } else {
-      ""
-    }
-  )
-
   graticule <- sf::st_graticule(
     lon = seq(-180, 180, by = 20),
     lat = seq(-80, 80, by = 10),
     crs = sf::st_crs(4326)
   )
 
+  plot_title <- title %||% accepted_name
+
   plot_obj <- ggplot2::ggplot() +
-    ggplot2::geom_sf(data = atlas, fill = base_fill, color = "#81806E", linewidth = 0.14) +
-    ggplot2::geom_sf(data = graticule, color = "#666559", linewidth = 0.16, alpha = 0.65) +
-    ggplot2::geom_sf(data = selected_sf, fill = dist_fill, color = border_color, linewidth = 0.24) +
-    do.call(ggplot2::coord_sf, .mdd_coord_sf_args(zoom_info)) +
-    ggplot2::labs(
-      title = accepted_name,
-      subtitle = subtitle,
-      caption = caption
+    ggplot2::geom_sf(
+      data = atlas,
+      fill = base_fill,
+      color = country_color,
+      linewidth = country_linewidth
     ) +
+    ggplot2::geom_sf(
+      data = graticule,
+      color = graticule_color,
+      linewidth = graticule_linewidth,
+      alpha = graticule_alpha
+    ) +
+    ggplot2::geom_sf(
+      data = selected_sf,
+      fill = dist_fill,
+      color = border_color,
+      linewidth = dist_linewidth
+    ) +
+    do.call(ggplot2::coord_sf, .mdd_coord_sf_args(zoom_info)) +
+    ggplot2::labs(title = plot_title, subtitle = NULL, caption = NULL) +
     ggplot2::theme_void() +
     ggplot2::theme(
       legend.position = "none",
-      plot.title = ggplot2::element_text(face = "bold", size = 15, color = "#F5F1E5"),
-      plot.subtitle = ggplot2::element_text(size = 10, color = "#D9D1C6"),
-      plot.caption = ggplot2::element_text(size = 8, color = "#D4C77F"),
-      plot.background = ggplot2::element_rect(fill = "#4B3A33", color = NA),
+      plot.title = ggplot2::element_text(
+        face = title_face,
+        size = title_size,
+        color = title_color,
+        hjust = 0,
+        margin = ggplot2::margin(b = 10)
+      ),
+      plot.background = ggplot2::element_rect(fill = plot_fill, color = NA),
       panel.background = ggplot2::element_rect(fill = ocean_fill, color = NA),
-      plot.margin = ggplot2::margin(12, 12, 12, 12)
+      panel.border = ggplot2::element_rect(color = NA, fill = NA),
+      plot.margin = ggplot2::margin(14, 14, 14, 14)
     )
 
   attr(plot_obj, "mdd_distribution_info") <- list(
@@ -186,33 +218,49 @@ mdd_distribution_map <- function(name,
   plot_obj
 }
 
-.mdd_default_world_atlas <- function() {
-  inst_path <- system.file("extdata", "world-atlas-countries-10m.rds", package = "rmdd")
-  if (nzchar(inst_path) && file.exists(inst_path)) {
-    return(readRDS(inst_path))
+.mdd_default_world_sf <- function() {
+  if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
+    cli::cli_abort(c(
+      "{.pkg rnaturalearth} is required to build distribution maps.",
+      "i" = "Install {.pkg rnaturalearth} to use {.fn mdd_distribution_map}."
+    ))
   }
 
-  dev_path <- fs::path("inst", "extdata", "world-atlas-countries-10m.rds")
-  if (fs::file_exists(dev_path)) {
-    return(readRDS(dev_path))
+  if (!requireNamespace("rnaturalearthdata", quietly = TRUE)) {
+    cli::cli_abort(c(
+      "{.pkg rnaturalearthdata} is required to access Natural Earth polygons.",
+      "i" = "Install {.pkg rnaturalearthdata} to use {.fn mdd_distribution_map}."
+    ))
   }
 
-  cli::cli_abort(c(
-    "Packaged {.pkg world-atlas} countries layer not found.",
-    "x" = "Expected {.file world-atlas-countries-10m.rds} in {.file inst/extdata}.",
-    "i" = "Rebuild the spatial asset before calling {.fn mdd_distribution_map}."
-  ))
+  tryCatch(
+    rnaturalearth::ne_countries(scale = "medium", returnclass = "sf"),
+    error = function(cnd) {
+      cli::cli_abort(c(
+        "Could not load country polygons from {.pkg rnaturalearth}.",
+        "x" = conditionMessage(cnd),
+        "i" = "Install {.pkg rnaturalearth} and {.pkg rnaturalearthdata} to use {.fn mdd_distribution_map}."
+      ))
+    }
+  )
 }
 
 .mdd_distribution_units <- function(country_value) {
-  if (length(country_value) == 0 || is.null(country_value) || all(is.na(country_value))) {
+  if (
+    length(country_value) == 0 ||
+      is.null(country_value) ||
+      all(is.na(country_value))
+  ) {
     cli::cli_abort(c(
       "The matched taxon does not contain {.field country_distribution} information.",
       "i" = "This taxon cannot be mapped with {.fn mdd_distribution_map}."
     ))
   }
 
-  units <- unlist(strsplit(as.character(country_value[[1]]), "\\|"), use.names = FALSE)
+  units <- unlist(
+    strsplit(as.character(country_value[[1]]), "\\|"),
+    use.names = FALSE
+  )
   units <- trimws(units)
   units <- units[nzchar(units)]
 
@@ -241,8 +289,11 @@ mdd_distribution_map <- function(name,
     ) |>
     dplyr::distinct()
 
-  exact_name <- atlas_lookup$atlas_name[match(units_tbl$normalized_country, atlas_lookup$normalized_atlas)]
-  alias_name <- .mdd_world_atlas_alias(units_tbl$normalized_country)
+  exact_name <- atlas_lookup$atlas_name[match(
+    units_tbl$normalized_country,
+    atlas_lookup$normalized_atlas
+  )]
+  alias_name <- .mdd_naturalearth_alias(units_tbl$normalized_country)
   resolved_name <- ifelse(!is.na(alias_name), alias_name, exact_name)
 
   dplyr::mutate(
@@ -259,13 +310,20 @@ mdd_distribution_map <- function(name,
 .mdd_input_match_type <- function(match_row) {
   stage <- as.character(match_row$match_stage[[1]])
   has_fuzzy <- grepl("fuzzy", stage) ||
-    (!is.null(match_row$fuzzy_genus_dist) && !is.na(match_row$fuzzy_genus_dist[[1]])) ||
-    (!is.null(match_row$fuzzy_species_dist) && !is.na(match_row$fuzzy_species_dist[[1]]))
+    (!is.null(match_row$fuzzy_genus_dist) &&
+      !is.na(match_row$fuzzy_genus_dist[[1]])) ||
+    (!is.null(match_row$fuzzy_species_dist) &&
+      !is.na(match_row$fuzzy_species_dist[[1]]))
 
   if (has_fuzzy) "partial" else "total"
 }
 
-.mdd_map_zoom <- function(selected_sf, zoom = "world", xlim = NULL, ylim = NULL) {
+.mdd_map_zoom <- function(
+  selected_sf,
+  zoom = "world",
+  xlim = NULL,
+  ylim = NULL
+) {
   zoom <- match.arg(zoom, choices = c("world", "auto", "manual"))
 
   if (identical(zoom, "world")) {
@@ -273,7 +331,9 @@ mdd_distribution_map <- function(name,
   }
 
   if (identical(zoom, "manual")) {
-    if (is.null(xlim) || is.null(ylim) || length(xlim) != 2L || length(ylim) != 2L) {
+    if (
+      is.null(xlim) || is.null(ylim) || length(xlim) != 2L || length(ylim) != 2L
+    ) {
       cli::cli_abort(c(
         "When {.code zoom = 'manual'}, both {.arg xlim} and {.arg ylim} must be numeric vectors of length 2.",
         "x" = "Received {.val {xlim}} and {.val {ylim}}."
@@ -324,13 +384,15 @@ mdd_distribution_map <- function(name,
   args
 }
 
-.mdd_cli_distribution_summary <- function(query,
-                                          matched_name,
-                                          accepted_name,
-                                          input_match,
-                                          mapped_units,
-                                          unresolved_units,
-                                          zoom_mode) {
+.mdd_cli_distribution_summary <- function(
+  query,
+  matched_name,
+  accepted_name,
+  input_match,
+  mapped_units,
+  unresolved_units,
+  zoom_mode
+) {
   n_mapped <- length(unique(stats::na.omit(mapped_units$atlas_name)))
   n_total <- nrow(mapped_units)
   n_unresolved <- nrow(unresolved_units)
@@ -339,7 +401,9 @@ mdd_distribution_map <- function(name,
   if (identical(input_match, "total")) {
     cli::cli_alert_success("Exact input match: {.val {query}}")
   } else {
-    cli::cli_alert_warning("Partial input match: {.val {query}} -> {.val {matched_name}}")
+    cli::cli_alert_warning(
+      "Partial input match: {.val {query}} -> {.val {matched_name}}"
+    )
   }
 
   cli::cli_inform(c(
@@ -350,11 +414,15 @@ mdd_distribution_map <- function(name,
 
   if (n_unresolved > 0) {
     cli::cli_warn(c(
-      "{n_unresolved} distribution unit{?s} could not be located in {.pkg world-atlas}.",
+      "{n_unresolved} distribution unit{?s} could not be located in {.pkg rnaturalearth}.",
       "!" = "{n_unresolved} unit{?s} {?remains/remain} unresolved."
     ))
     preview <- utils::head(unresolved_units$clean_country, 8)
-    cli::cli_ul(vapply(preview, function(x) paste0("{.val ", x, "}"), character(1)))
+    cli::cli_ul(vapply(
+      preview,
+      function(x) paste0("{.val ", x, "}"),
+      character(1)
+    ))
     if (n_unresolved > 8) {
       cli::cli_text("... and {n_unresolved - 8} more.")
     }
@@ -374,7 +442,7 @@ mdd_distribution_map <- function(name,
   trimws(x)
 }
 
-.mdd_world_atlas_alias <- function(x) {
+.mdd_naturalearth_alias <- function(x) {
   aliases <- c(
     "antigua and barbuda" = "Antigua and Barb.",
     "bosnia and herzegovina" = "Bosnia and Herz.",

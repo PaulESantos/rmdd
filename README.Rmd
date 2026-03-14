@@ -22,12 +22,17 @@ CRAN-oriented development practices.
 
 ## Installation
 
-`rmdd` is not on CRAN yet. Install the development version from the project
-directory:
+When `rmdd` is available on CRAN, install it with:
+
+```{r eval = FALSE}
+install.packages("rmdd")
+```
+
+Install the development version from GitHub with:
 
 ```{r eval = FALSE}
 # install.packages("pak")
-pak::pak("path/to/rmdd")
+pak::pak("PaulESantos/rmdd")
 ```
 
 ## Planned features

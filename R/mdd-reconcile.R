@@ -1,13 +1,18 @@
 #' Classify mammal scientific names into taxonomic components
 #'
-#' Parse mammal scientific names into genus, species, and trailing author text.
-#' The parser is intentionally conservative and targets species-level MDD
-#' reconciliation workflows.
+#' Parse mammal scientific names into genus, optional subgenus, species,
+#' optional subspecies, and trailing author text. The parser is intentionally
+#' conservative and targets species-level MDD reconciliation workflows.
 #'
 #' @param splist Character vector of scientific names.
 #'
 #' @return A tibble with one row per input name and standardized columns for
 #'   species-level reconciliation.
+#' @examples
+#' classify_mammal_names(c(
+#'   "Puma concolor",
+#'   "Capromys (Pygmaeocapromys) angelcabrerai"
+#' ))
 #' @export
 classify_mammal_names <- function(splist) {
   if (!is.character(splist)) {
@@ -22,44 +27,41 @@ classify_mammal_names <- function(splist) {
     raw <- as.character(x)
     has_cf <- grepl("\\bcf\\.?\\b", raw, ignore.case = TRUE, perl = TRUE)
     has_aff <- grepl("\\baff\\.?\\b", raw, ignore.case = TRUE, perl = TRUE)
-    had_hybrid <- grepl("(^|[[:space:]])(x|\u00d7)([[:space:]]|$)", raw, perl = TRUE)
+    had_hybrid <- grepl(
+      "(^|[[:space:]])(x|\\x{00D7})([[:space:]]|$)",
+      raw,
+      perl = TRUE
+    )
     is_sp <- grepl("\\bsp\\.?\\b", raw, ignore.case = TRUE, perl = TRUE)
     is_spp <- grepl("\\bspp\\.?\\b", raw, ignore.case = TRUE, perl = TRUE)
 
-    cleaned <- raw
-    cleaned <- gsub("_", " ", cleaned, fixed = TRUE)
-    cleaned <- gsub("\\bcf\\.?\\b", " ", cleaned, ignore.case = TRUE, perl = TRUE)
-    cleaned <- gsub("\\baff\\.?\\b", " ", cleaned, ignore.case = TRUE, perl = TRUE)
-    cleaned <- gsub("(^|[[:space:]])(x|\u00d7)([[:space:]]|$)", " ", cleaned, perl = TRUE)
-    cleaned <- stringr::str_squish(cleaned)
-
-    tokens <- if (nzchar(cleaned)) strsplit(cleaned, "[[:space:]]+")[[1]] else character(0)
-    genus <- if (length(tokens) >= 1) paste0(
-      toupper(substr(tolower(tokens[[1]]), 1, 1)),
-      substr(tolower(tokens[[1]]), 2, nchar(tokens[[1]]))
-    ) else NA_character_
+    parsed <- .parse_input_name(raw)
 
     if (is_sp || is_spp) {
-      species <- NA_character_
-      author <- ""
+      parsed$species <- NA_character_
+      parsed$subspecies <- NA_character_
+      parsed$author <- ""
       rank <- 1
     } else {
-      species <- if (length(tokens) >= 2) tolower(tokens[[2]]) else NA_character_
-      author <- if (length(tokens) >= 3) paste(tokens[3:length(tokens)], collapse = " ") else ""
-      rank <- if (is.na(species)) 1 else 2
+      rank <- if (!is.na(parsed$subspecies)) {
+        3
+      } else if (!is.na(parsed$species)) {
+        2
+      } else {
+        1
+      }
     }
-
-    orig_name <- c(genus, species)
-    orig_name <- orig_name[!is.na(orig_name) & nzchar(orig_name)]
-    orig_name <- paste(orig_name, collapse = " ")
 
     tibble::tibble(
       sorter = as.numeric(idx),
       input_name = raw,
-      orig_name = if (nzchar(orig_name)) orig_name else NA_character_,
-      orig_genus = genus,
-      orig_species = species,
-      author = author,
+      orig_name = parsed$display_name,
+      orig_name_clean = parsed$name_clean,
+      orig_genus = parsed$genus,
+      orig_subgenus = parsed$subgenus,
+      orig_species = parsed$species,
+      orig_subspecies = parsed$subspecies,
+      author = parsed$author,
       rank = rank,
       has_cf = has_cf,
       has_aff = has_aff,
@@ -73,6 +75,26 @@ classify_mammal_names <- function(splist) {
   dplyr::bind_rows(out)
 }
 
+.mdd_runtime_cache <- new.env(parent = emptyenv())
+
+.mdd_default_match_backbone <- function() {
+  if (
+    exists("default_backbone", envir = .mdd_runtime_cache, inherits = FALSE)
+  ) {
+    return(get(
+      "default_backbone",
+      envir = .mdd_runtime_cache,
+      inherits = FALSE
+    ))
+  }
+
+  backbone <- mdd_name_index() |>
+    dplyr::distinct()
+
+  assign("default_backbone", backbone, envir = .mdd_runtime_cache)
+  backbone
+}
+
 #' Build an MDD reconciliation backbone
 #'
 #' Construct a species-level reconciliation backbone that combines accepted MDD
@@ -83,113 +105,19 @@ classify_mammal_names <- function(splist) {
 #' @param synonyms Optional data frame like `mdd_synonyms`.
 #'
 #' @return A tibble used internally by [mdd_matching()].
+#' @examples
+#' bb <- build_mdd_match_backbone(
+#'   checklist = dplyr::slice(mdd_checklist, 1:10),
+#'   synonyms = dplyr::slice(mdd_synonyms, 1:20)
+#' )
+#' bb
 #' @export
 build_mdd_match_backbone <- function(checklist = NULL, synonyms = NULL) {
-  checklist <- checklist %||% .mdd_default_dataset("mdd_checklist")
-  synonyms <- synonyms %||% .mdd_default_dataset("mdd_synonyms")
-
-  if (is.null(checklist)) {
-    rlang::abort("`checklist` is required when `mdd_checklist` is not available in the package.")
+  if (is.null(checklist) && is.null(synonyms)) {
+    return(.mdd_default_match_backbone())
   }
 
-  checklist <- tibble::as_tibble(checklist)
-  .assert_has_columns(checklist, c("id", "genus", "specific_epithet"), "checklist")
-
-  if (!"sci_name" %in% names(checklist)) {
-    checklist$sci_name <- paste(checklist$genus, checklist$specific_epithet, sep = "_")
-  }
-
-  if (!"authority_species_author" %in% names(checklist)) {
-    checklist$authority_species_author <- NA_character_
-  }
-
-  accepted <- checklist |>
-    dplyr::transmute(
-      query_name = .canonical_binomial(genus, specific_epithet),
-      query_name_clean = .clean_name_for_match(query_name),
-      query_genus = as.character(genus),
-      query_species = as.character(specific_epithet),
-      matched_name_id = as.character(id),
-      matched_name = query_name,
-      matched_author = as.character(authority_species_author),
-      taxon_status = "accepted",
-      match_source = "checklist",
-      accepted_id = as.character(id),
-      accepted_name = query_name,
-      accepted_author = as.character(authority_species_author),
-      accepted_genus = as.character(genus),
-      accepted_species = as.character(specific_epithet),
-      is_accepted_name = TRUE
-    )
-
-  if (is.null(synonyms)) {
-    return(dplyr::mutate(dplyr::distinct(accepted), status_rank = 2L))
-  }
-
-  synonyms <- tibble::as_tibble(synonyms)
-  .assert_has_columns(
-    synonyms,
-    c("mdd_syn_id", "mdd_species_id", "mdd_original_combination"),
-    "synonyms"
-  )
-
-  if (nrow(synonyms) == 0) {
-    return(dplyr::mutate(dplyr::distinct(accepted), status_rank = 2L))
-  }
-
-  if (!"mdd_author" %in% names(synonyms)) {
-    synonyms$mdd_author <- NA_character_
-  }
-
-  normalized_combination <- if ("mdd_normalized_original_combination" %in% names(synonyms)) {
-    dplyr::coalesce(synonyms$mdd_normalized_original_combination, synonyms$mdd_original_combination)
-  } else {
-    synonyms$mdd_original_combination
-  }
-
-  synonym_names <- .parse_backbone_name(normalized_combination)
-
-  accepted_lookup <- checklist |>
-    dplyr::transmute(
-      accepted_id = as.character(id),
-      accepted_name = .canonical_binomial(genus, specific_epithet),
-      accepted_author = as.character(authority_species_author),
-      accepted_genus = as.character(genus),
-      accepted_species = as.character(specific_epithet)
-    )
-
-  synonym_tbl <- synonyms |>
-    dplyr::mutate(
-      mdd_species_id = as.character(mdd_species_id),
-      query_name = synonym_names$query_name,
-      query_name_clean = synonym_names$query_name_clean,
-      query_genus = synonym_names$query_genus,
-      query_species = synonym_names$query_species
-    ) |>
-    dplyr::left_join(accepted_lookup, by = c("mdd_species_id" = "accepted_id")) |>
-    dplyr::transmute(
-      query_name = query_name,
-      query_name_clean = query_name_clean,
-      query_genus = query_genus,
-      query_species = query_species,
-      matched_name_id = as.character(mdd_syn_id),
-      matched_name = query_name,
-      matched_author = as.character(mdd_author),
-      taxon_status = "synonym",
-      match_source = "synonym",
-      accepted_id = as.character(mdd_species_id),
-      accepted_name = accepted_name,
-      accepted_author = accepted_author,
-      accepted_genus = accepted_genus,
-      accepted_species = accepted_species,
-      is_accepted_name = FALSE
-    ) |>
-    dplyr::filter(!is.na(query_genus), !is.na(query_species))
-
-  dplyr::bind_rows(accepted, synonym_tbl) |>
-    dplyr::mutate(
-      status_rank = dplyr::if_else(taxon_status == "accepted", 2L, 1L, missing = 0L)
-    ) |>
+  mdd_name_index(checklist = checklist, synonyms = synonyms) |>
     dplyr::distinct()
 }
 
@@ -211,24 +139,34 @@ build_mdd_match_backbone <- function(checklist = NULL, synonyms = NULL) {
 #'
 #' @return A tibble with row-level traceability, pathway flags, matched name
 #'   context, accepted-name context, and fuzzy distance columns.
+#' @examples
+#' mdd_matching(c("Puma concolor", "Felis concolor", "Pumma concolor"))
 #' @export
-mdd_matching <- function(x,
-                         target_df = NULL,
-                         prefilter_genus = TRUE,
-                         allow_duplicates = FALSE,
-                         max_dist = 1,
-                         method = "osa") {
+mdd_matching <- function(
+  x,
+  target_df = NULL,
+  prefilter_genus = TRUE,
+  allow_duplicates = FALSE,
+  max_dist = 1,
+  method = "osa"
+) {
   df <- .mdd_check_input(x)
   df$input_index <- seq_len(nrow(df))
   df$.dedup_key <- ifelse(
-    is.na(df$orig_species),
-    paste0("ROW|", df$input_index),
-    paste(df$orig_genus, df$orig_species, sep = "|")
+    !is.na(df$orig_name_clean) & nzchar(df$orig_name_clean),
+    df$orig_name_clean,
+    ifelse(
+      is.na(df$orig_species),
+      paste0("ROW|", df$input_index),
+      paste(df$orig_genus, df$orig_species, sep = "|")
+    )
   )
 
   had_duplicates <- any(duplicated(df$.dedup_key))
   if (had_duplicates && !isTRUE(allow_duplicates)) {
-    rlang::abort("Duplicate genus-species keys detected. Use `allow_duplicates = TRUE` to keep all rows.")
+    rlang::abort(
+      "Duplicate genus-species keys detected. Use `allow_duplicates = TRUE` to keep all rows."
+    )
   }
 
   df_work <- if (had_duplicates && isTRUE(allow_duplicates)) {
@@ -240,7 +178,18 @@ mdd_matching <- function(x,
     df
   }
 
-  target_df <- target_df %||% build_mdd_match_backbone()
+  target_df <- target_df %||%
+    {
+      subset_records <- .mdd_subset_records_for_matching(
+        df_work,
+        max_dist = max_dist,
+        method = method
+      )
+      build_mdd_match_backbone(
+        checklist = subset_records$checklist,
+        synonyms = subset_records$synonyms
+      )
+    }
   target_df <- .normalize_mdd_backbone(target_df)
 
   if (isTRUE(prefilter_genus)) {
@@ -261,7 +210,12 @@ mdd_matching <- function(x,
   n2_true <- dplyr::filter(node_2, genus_match)
   n2_false <- dplyr::filter(node_2, !genus_match)
 
-  node_3 <- .mdd_fuzzy_match_genus(n2_false, target_df, max_dist = max_dist, method = method)
+  node_3 <- .mdd_fuzzy_match_genus(
+    n2_false,
+    target_df,
+    max_dist = max_dist,
+    method = method
+  )
   ambiguous_genus <- attr(node_3, "ambiguous_genus")
   n3_true <- dplyr::filter(node_3, fuzzy_match_genus)
   n3_false <- dplyr::filter(node_3, !fuzzy_match_genus)
@@ -271,7 +225,12 @@ mdd_matching <- function(x,
   n4_true <- dplyr::filter(node_4, direct_match_species_within_genus)
   n4_false <- dplyr::filter(node_4, !direct_match_species_within_genus)
 
-  node_5 <- .mdd_fuzzy_match_species_within_genus(n4_false, target_df, max_dist = max_dist, method = method)
+  node_5 <- .mdd_fuzzy_match_species_within_genus(
+    n4_false,
+    target_df,
+    max_dist = max_dist,
+    method = method
+  )
   ambiguous_species <- attr(node_5, "ambiguous_species")
   n5_true <- dplyr::filter(node_5, fuzzy_match_species_within_genus)
   n5_false <- dplyr::filter(node_5, !fuzzy_match_species_within_genus)
@@ -288,9 +247,18 @@ mdd_matching <- function(x,
   retry_genus_true <- dplyr::filter(retry_genus, fuzzy_match_genus)
   retry_genus_false <- dplyr::filter(retry_genus, !fuzzy_match_genus)
 
-  retry_direct <- .mdd_direct_match_species_within_genus(retry_genus_true, target_df)
-  retry_direct_true <- dplyr::filter(retry_direct, direct_match_species_within_genus)
-  retry_direct_false <- dplyr::filter(retry_direct, !direct_match_species_within_genus)
+  retry_direct <- .mdd_direct_match_species_within_genus(
+    retry_genus_true,
+    target_df
+  )
+  retry_direct_true <- dplyr::filter(
+    retry_direct,
+    direct_match_species_within_genus
+  )
+  retry_direct_false <- dplyr::filter(
+    retry_direct,
+    !direct_match_species_within_genus
+  )
 
   retry_fuzzy_species <- .mdd_fuzzy_match_species_within_genus(
     retry_direct_false,
@@ -299,8 +267,14 @@ mdd_matching <- function(x,
     method = method
   )
   ambiguous_species_retry <- attr(retry_fuzzy_species, "ambiguous_species")
-  retry_fuzzy_species_true <- dplyr::filter(retry_fuzzy_species, fuzzy_match_species_within_genus)
-  retry_fuzzy_species_false <- dplyr::filter(retry_fuzzy_species, !fuzzy_match_species_within_genus)
+  retry_fuzzy_species_true <- dplyr::filter(
+    retry_fuzzy_species,
+    fuzzy_match_species_within_genus
+  )
+  retry_fuzzy_species_false <- dplyr::filter(
+    retry_fuzzy_species,
+    !fuzzy_match_species_within_genus
+  )
 
   matched <- dplyr::bind_rows(
     n1_true,
@@ -349,7 +323,9 @@ mdd_matching <- function(x,
       input_name,
       orig_name,
       orig_genus,
+      dplyr::any_of("orig_subgenus"),
       orig_species,
+      dplyr::any_of("orig_subspecies"),
       author,
       matched_name_id,
       matched_name,
@@ -430,7 +406,9 @@ mdd_matching <- function(x,
   if (length(missing_cols) > 0) {
     rlang::abort(
       paste0(
-        "Missing required columns in `", object_name, "`: ",
+        "Missing required columns in `",
+        object_name,
+        "`: ",
         paste(missing_cols, collapse = ", ")
       )
     )
@@ -461,21 +439,133 @@ mdd_matching <- function(x,
   )
 }
 
-.parse_backbone_name <- function(x) {
-  cleaned <- .clean_name_for_match(x)
-  parts <- strsplit(cleaned, " ", fixed = TRUE)
-  genus <- vapply(parts, function(tok) if (length(tok) >= 1) .title_case(tok[[1]]) else NA_character_, character(1))
-  species <- vapply(parts, function(tok) if (length(tok) >= 2) tolower(tok[[2]]) else NA_character_, character(1))
-  query_name <- ifelse(
-    is.na(genus) | is.na(species),
+.canonical_name <- function(
+  genus,
+  species,
+  subspecies = NA_character_,
+  subgenus = NA_character_
+) {
+  genus <- as.character(genus)
+  species <- as.character(species)
+  subspecies <- as.character(subspecies)
+  subgenus <- as.character(subgenus)
+
+  out <- ifelse(
+    is.na(genus) | !nzchar(genus),
     NA_character_,
-    paste(genus, species, sep = " ")
+    genus
   )
+
+  has_subgenus <- !is.na(subgenus) & nzchar(subgenus)
+  out <- ifelse(has_subgenus, paste0(out, " (", subgenus, ")"), out)
+
+  has_species <- !is.na(species) & nzchar(species)
+  out <- ifelse(has_species, paste(out, species), out)
+
+  has_subspecies <- !is.na(subspecies) & nzchar(subspecies)
+  out <- ifelse(has_subspecies, paste(out, subspecies), out)
+
+  ifelse(is.na(out) | !nzchar(out), NA_character_, stringr::str_squish(out))
+}
+
+.strip_subgenus <- function(x) {
+  x <- as.character(x)
+  x <- gsub("\\s*\\([^)]*\\)", "", x, perl = TRUE)
+  stringr::str_squish(x)
+}
+
+.parse_input_name <- function(x) {
+  cleaned <- as.character(x)
+  cleaned <- gsub("_", " ", cleaned, fixed = TRUE)
+  cleaned <- gsub("\\bcf\\.?\\b", " ", cleaned, ignore.case = TRUE, perl = TRUE)
+  cleaned <- gsub(
+    "\\baff\\.?\\b",
+    " ",
+    cleaned,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+  cleaned <- gsub(
+    "(^|[[:space:]])(x|\\x{00D7})([[:space:]]|$)",
+    " ",
+    cleaned,
+    perl = TRUE
+  )
+  cleaned <- stringr::str_squish(cleaned)
+
+  if (!nzchar(cleaned)) {
+    return(list(
+      genus = NA_character_,
+      subgenus = NA_character_,
+      species = NA_character_,
+      subspecies = NA_character_,
+      author = "",
+      display_name = NA_character_,
+      name_clean = NA_character_
+    ))
+  }
+
+  tokens <- strsplit(cleaned, "[[:space:]]+")[[1]]
+  genus <- if (length(tokens) >= 1) .title_case(tokens[[1]]) else NA_character_
+  idx <- 2L
+  subgenus <- NA_character_
+
+  if (length(tokens) >= 2 && grepl("^\\([^()]+\\)$", tokens[[2]])) {
+    subgenus <- .title_case(gsub("^\\(|\\)$", "", tokens[[2]]))
+    idx <- 3L
+  }
+
+  species <- if (length(tokens) >= idx) {
+    tolower(tokens[[idx]])
+  } else {
+    NA_character_
+  }
+  remaining <- if (length(tokens) > idx) {
+    tokens[(idx + 1):length(tokens)]
+  } else {
+    character(0)
+  }
+
+  subspecies <- NA_character_
+  author <- ""
+  if (length(remaining) >= 1) {
+    first_extra <- remaining[[1]]
+    looks_like_subspecies <- grepl("^[[:lower:]-]+$", first_extra)
+    if (looks_like_subspecies) {
+      subspecies <- tolower(first_extra)
+      if (length(remaining) > 1) {
+        author <- paste(remaining[-1], collapse = " ")
+      }
+    } else {
+      author <- paste(remaining, collapse = " ")
+    }
+  }
+
+  display_name <- .canonical_name(
+    genus = genus,
+    species = species,
+    subspecies = subspecies,
+    subgenus = subgenus
+  )
+
+  list(
+    genus = genus,
+    subgenus = subgenus,
+    species = species,
+    subspecies = subspecies,
+    author = author,
+    display_name = display_name,
+    name_clean = .clean_name_for_match(display_name)
+  )
+}
+
+.parse_backbone_name <- function(x) {
+  parsed <- lapply(as.character(x), .parse_input_name)
   tibble::tibble(
-    query_name = query_name,
-    query_name_clean = .clean_name_for_match(query_name),
-    query_genus = genus,
-    query_species = species
+    query_name = vapply(parsed, `[[`, character(1), "display_name"),
+    query_name_clean = vapply(parsed, `[[`, character(1), "name_clean"),
+    query_genus = vapply(parsed, `[[`, character(1), "genus"),
+    query_species = vapply(parsed, `[[`, character(1), "species")
   )
 }
 
@@ -502,21 +592,46 @@ mdd_matching <- function(x,
   if (all(c("orig_genus", "orig_species") %in% names(df))) {
     out <- df
   } else if (all(c("Orig.Genus", "Orig.Species") %in% names(df))) {
-    out <- dplyr::rename(df, orig_genus = Orig.Genus, orig_species = Orig.Species)
+    out <- dplyr::rename(
+      df,
+      orig_genus = Orig.Genus,
+      orig_species = Orig.Species
+    )
   } else if (all(c("genus", "species") %in% names(df))) {
     out <- dplyr::rename(df, orig_genus = genus, orig_species = species)
   } else if (all(c("Genus", "Species") %in% names(df))) {
     out <- dplyr::rename(df, orig_genus = Genus, orig_species = Species)
   } else {
-    rlang::abort("Input data must contain genus/species columns or use `classify_mammal_names()` first.")
+    rlang::abort(
+      "Input data must contain genus/species columns or use `classify_mammal_names()` first."
+    )
   }
 
   n <- nrow(out)
-  if (!"sorter" %in% names(out)) out$sorter <- as.numeric(seq_len(n))
-  if (!"input_name" %in% names(out)) out$input_name <- .canonical_binomial(out$orig_genus, out$orig_species)
-  if (!"orig_name" %in% names(out)) out$orig_name <- .canonical_binomial(out$orig_genus, out$orig_species)
-  if (!"author" %in% names(out)) out$author <- rep("", n)
-  if (!"rank" %in% names(out)) out$rank <- ifelse(is.na(out$orig_species), 1, 2)
+  if (!"sorter" %in% names(out)) {
+    out$sorter <- as.numeric(seq_len(n))
+  }
+  if (!"input_name" %in% names(out)) {
+    out$input_name <- .canonical_binomial(out$orig_genus, out$orig_species)
+  }
+  if (!"orig_name" %in% names(out)) {
+    out$orig_name <- .canonical_binomial(out$orig_genus, out$orig_species)
+  }
+  if (!"orig_name_clean" %in% names(out)) {
+    out$orig_name_clean <- .clean_name_for_match(out$orig_name)
+  }
+  if (!"author" %in% names(out)) {
+    out$author <- rep("", n)
+  }
+  if (!"rank" %in% names(out)) {
+    out$rank <- ifelse(is.na(out$orig_species), 1, 2)
+  }
+  if (!"orig_subgenus" %in% names(out)) {
+    out$orig_subgenus <- rep(NA_character_, n)
+  }
+  if (!"orig_subspecies" %in% names(out)) {
+    out$orig_subspecies <- rep(NA_character_, n)
+  }
   for (nm in c("has_cf", "has_aff", "is_sp", "is_spp", "had_hybrid")) {
     if (!nm %in% names(out)) out[[nm]] <- rep(FALSE, n)
   }
@@ -524,9 +639,24 @@ mdd_matching <- function(x,
   out |>
     dplyr::mutate(
       orig_genus = .title_case(orig_genus),
-      orig_species = ifelse(is.na(orig_species), NA_character_, tolower(as.character(orig_species))),
+      orig_subgenus = ifelse(
+        is.na(orig_subgenus),
+        NA_character_,
+        .title_case(orig_subgenus)
+      ),
+      orig_species = ifelse(
+        is.na(orig_species),
+        NA_character_,
+        tolower(as.character(orig_species))
+      ),
+      orig_subspecies = ifelse(
+        is.na(orig_subspecies),
+        NA_character_,
+        tolower(as.character(orig_subspecies))
+      ),
       input_name = as.character(input_name),
       orig_name = as.character(orig_name),
+      orig_name_clean = .clean_name_for_match(orig_name),
       author = as.character(author)
     )
 }
@@ -536,30 +666,59 @@ mdd_matching <- function(x,
   .assert_has_columns(
     target_df,
     c(
-      "query_name", "query_name_clean", "query_genus", "query_species",
-      "matched_name_id", "matched_name", "taxon_status",
-      "accepted_id", "accepted_name", "accepted_genus", "accepted_species",
+      "query_name",
+      "query_name_clean",
+      "query_genus",
+      "query_species",
+      "matched_name_id",
+      "matched_name",
+      "taxon_status",
+      "accepted_id",
+      "accepted_name",
+      "accepted_genus",
+      "accepted_species",
       "is_accepted_name"
     ),
     "target_df"
   )
 
-  if (!"matched_author" %in% names(target_df)) target_df$matched_author <- NA_character_
-  if (!"accepted_author" %in% names(target_df)) target_df$accepted_author <- NA_character_
-  if (!"match_source" %in% names(target_df)) target_df$match_source <- target_df$taxon_status
+  if (!"matched_author" %in% names(target_df)) {
+    target_df$matched_author <- NA_character_
+  }
+  if (!"accepted_author" %in% names(target_df)) {
+    target_df$accepted_author <- NA_character_
+  }
+  if (!"match_source" %in% names(target_df)) {
+    target_df$match_source <- target_df$taxon_status
+  }
   if (!"status_rank" %in% names(target_df)) {
-    target_df$status_rank <- dplyr::if_else(target_df$taxon_status == "accepted", 2L, 1L, missing = 0L)
+    target_df$status_rank <- dplyr::if_else(
+      target_df$taxon_status == "accepted",
+      2L,
+      1L,
+      missing = 0L
+    )
   }
 
   target_df |>
     dplyr::mutate(
       query_name_clean = .clean_name_for_match(query_name),
       query_genus = .title_case(query_genus),
-      query_species = ifelse(is.na(query_species), NA_character_, tolower(as.character(query_species)))
+      query_species = ifelse(
+        is.na(query_species),
+        NA_character_,
+        tolower(as.character(query_species))
+      )
     )
 }
 
-.mdd_prefilter_target_by_genus <- function(df, target_df, include_fuzzy = TRUE, max_dist = 1, method = "osa") {
+.mdd_prefilter_target_by_genus <- function(
+  df,
+  target_df,
+  include_fuzzy = TRUE,
+  max_dist = 1,
+  method = "osa"
+) {
   input_genera <- df |>
     dplyr::filter(!is.na(orig_genus)) |>
     dplyr::distinct(orig_genus)
@@ -569,23 +728,33 @@ mdd_matching <- function(x,
   }
 
   target_genera <- target_df |>
-    dplyr::distinct(query_genus)
+    dplyr::distinct(query_genus) |>
+    dplyr::mutate(query_len = nchar(query_genus))
 
   exact_genera <- input_genera |>
     dplyr::inner_join(target_genera, by = c("orig_genus" = "query_genus")) |>
     dplyr::pull(orig_genus)
 
   fuzzy_genera <- character(0)
-  if (isTRUE(include_fuzzy)) {
+  fuzzy_inputs <- input_genera |>
+    dplyr::mutate(orig_len = nchar(orig_genus))
+
+  if (isTRUE(include_fuzzy) && nrow(fuzzy_inputs) > 0) {
+    len_min <- min(fuzzy_inputs$orig_len) - max_dist
+    len_max <- max(fuzzy_inputs$orig_len) + max_dist
+    fuzzy_target_genera <- target_genera |>
+      dplyr::filter(query_len >= len_min, query_len <= len_max)
+
     fuzzy_tbl <- fuzzyjoin::stringdist_left_join(
-      input_genera,
-      target_genera,
+      fuzzy_inputs,
+      fuzzy_target_genera,
       by = c("orig_genus" = "query_genus"),
       method = method,
       max_dist = max_dist,
       distance_col = "fuzzy_genus_dist"
     ) |>
       dplyr::filter(!is.na(query_genus)) |>
+      dplyr::filter(abs(orig_len - query_len) <= max_dist) |>
       dplyr::distinct(orig_genus, query_genus, fuzzy_genus_dist)
 
     fuzzy_genera <- unique(fuzzy_tbl$query_genus)
@@ -631,20 +800,31 @@ mdd_matching <- function(x,
 }
 
 .pick_best_target <- function(x, row_id = ".row_id", dist_col = NULL) {
-  if (!row_id %in% names(x)) return(x)
+  if (!row_id %in% names(x)) {
+    return(x)
+  }
 
   x <- dplyr::mutate(x, .status_rank = dplyr::coalesce(status_rank, 0L))
   grouped <- dplyr::group_by(x, !!rlang::sym(row_id))
 
   if (!is.null(dist_col) && dist_col %in% names(x)) {
     grouped |>
-      dplyr::arrange(.data[[dist_col]], dplyr::desc(.status_rank), matched_name_id, .by_group = TRUE) |>
+      dplyr::arrange(
+        .data[[dist_col]],
+        dplyr::desc(.status_rank),
+        matched_name_id,
+        .by_group = TRUE
+      ) |>
       dplyr::slice_head(n = 1) |>
       dplyr::ungroup() |>
       dplyr::select(-.status_rank)
   } else {
     grouped |>
-      dplyr::arrange(dplyr::desc(.status_rank), matched_name_id, .by_group = TRUE) |>
+      dplyr::arrange(
+        dplyr::desc(.status_rank),
+        matched_name_id,
+        .by_group = TRUE
+      ) |>
       dplyr::slice_head(n = 1) |>
       dplyr::ungroup() |>
       dplyr::select(-.status_rank)
@@ -653,22 +833,35 @@ mdd_matching <- function(x,
 
 .mdd_direct_match <- function(df, target_df) {
   df <- .mdd_empty_match_columns(df)
-  if (nrow(df) == 0) return(df)
+  if (nrow(df) == 0) {
+    return(df)
+  }
 
   df_work <- dplyr::mutate(df, .row_id = dplyr::row_number())
-  matched_raw <- dplyr::left_join(
+  matched_full <- dplyr::left_join(
     .join_ready_left(df_work, target_df),
     target_df,
-    by = c("orig_genus" = "query_genus", "orig_species" = "query_species"),
+    by = c("orig_name_clean" = "query_name_clean"),
     suffix = c("", ".target")
   ) |>
     dplyr::filter(!is.na(query_name))
 
+  matched_binomial <- df_work |>
+    dplyr::anti_join(matched_full |> dplyr::select(.row_id), by = ".row_id") |>
+    dplyr::left_join(
+      target_df,
+      by = c("orig_genus" = "query_genus", "orig_species" = "query_species"),
+      suffix = c("", ".target")
+    ) |>
+    dplyr::filter(!is.na(query_name))
+
+  matched_raw <- dplyr::bind_rows(matched_full, matched_binomial)
+
   matched <- .pick_best_target(matched_raw, dist_col = NULL) |>
     dplyr::mutate(
       direct_match = TRUE,
-      matched_genus = orig_genus,
-      matched_species = orig_species
+      matched_genus = query_genus,
+      matched_species = query_species
     )
 
   unmatched <- df_work |>
@@ -676,7 +869,16 @@ mdd_matching <- function(x,
     dplyr::select(-.row_id)
 
   dplyr::bind_rows(
-    matched |> dplyr::select(-dplyr::any_of(c('.row_id', 'query_name', 'query_name_clean', 'query_genus', 'query_species'))),
+    matched |>
+      dplyr::select(
+        -dplyr::any_of(c(
+          '.row_id',
+          'query_name',
+          'query_name_clean',
+          'query_genus',
+          'query_species'
+        ))
+      ),
     unmatched
   ) |>
     dplyr::arrange(sorter)
@@ -684,7 +886,9 @@ mdd_matching <- function(x,
 
 .mdd_genus_match <- function(df, target_df) {
   df <- .mdd_empty_match_columns(df)
-  if (nrow(df) == 0) return(df)
+  if (nrow(df) == 0) {
+    return(df)
+  }
 
   genera <- target_df |>
     dplyr::distinct(query_genus) |>
@@ -697,18 +901,29 @@ mdd_matching <- function(x,
     )
 }
 
-.mdd_fuzzy_match_genus <- function(df,
-                                  target_df,
-                                  max_dist = 1,
-                                  method = "osa",
-                                  exclude_current = FALSE) {
+.mdd_fuzzy_match_genus <- function(
+  df,
+  target_df,
+  max_dist = 1,
+  method = "osa",
+  exclude_current = FALSE
+) {
   df <- .mdd_empty_match_columns(df)
-  if (nrow(df) == 0) return(df)
+  if (nrow(df) == 0) {
+    return(df)
+  }
 
   df_work <- dplyr::mutate(df, .row_id = dplyr::row_number())
-  df_work_clean <- .drop_match_distance_cols(df_work)
+  df_work_clean <- .drop_match_distance_cols(df_work) |>
+    dplyr::mutate(orig_len = nchar(orig_genus))
+
   genera <- target_df |>
-    dplyr::distinct(query_genus)
+    dplyr::distinct(query_genus) |>
+    dplyr::mutate(query_len = nchar(query_genus))
+
+  len_min <- min(df_work_clean$orig_len, na.rm = TRUE) - max_dist
+  len_max <- max(df_work_clean$orig_len, na.rm = TRUE) + max_dist
+  genera <- dplyr::filter(genera, query_len >= len_min, query_len <= len_max)
 
   matched_temp <- fuzzyjoin::stringdist_left_join(
     df_work_clean,
@@ -719,7 +934,10 @@ mdd_matching <- function(x,
     distance_col = "fuzzy_genus_dist"
   ) |>
     dplyr::filter(!is.na(query_genus)) |>
-    dplyr::filter(!exclude_current | is.na(matched_genus) | query_genus != matched_genus) |>
+    dplyr::filter(abs(orig_len - query_len) <= max_dist) |>
+    dplyr::filter(
+      !exclude_current | is.na(matched_genus) | query_genus != matched_genus
+    ) |>
     dplyr::group_by(.row_id) |>
     dplyr::slice_min(order_by = fuzzy_genus_dist, with_ties = TRUE) |>
     dplyr::ungroup()
@@ -747,20 +965,10 @@ mdd_matching <- function(x,
       fuzzy_match_genus = TRUE,
       matched_genus = query_genus
     ) |>
-    dplyr::select(-query_genus)
+    dplyr::select(-query_genus, -orig_len, -query_len)
 
-  unmatched <- if (isTRUE(exclude_current)) {
-    df_work |>
-      dplyr::anti_join(matched |> dplyr::select(.row_id), by = ".row_id")
-  } else {
-    fuzzyjoin::stringdist_anti_join(
-      df_work_clean,
-      genera,
-      by = c("orig_genus" = "query_genus"),
-      method = method,
-      max_dist = max_dist
-    )
-  }
+  unmatched <- df_work |>
+    dplyr::anti_join(matched |> dplyr::select(.row_id), by = ".row_id")
 
   out <- dplyr::bind_rows(
     matched |>
@@ -779,7 +987,9 @@ mdd_matching <- function(x,
 
 .mdd_direct_match_species_within_genus <- function(df, target_df) {
   df <- .mdd_empty_match_columns(df)
-  if (nrow(df) == 0) return(df)
+  if (nrow(df) == 0) {
+    return(df)
+  }
 
   candidates <- target_df |>
     dplyr::select(-query_name_clean) |>
@@ -805,30 +1015,72 @@ mdd_matching <- function(x,
 
   dplyr::bind_rows(
     matched |>
-      dplyr::select(-dplyr::any_of(c('.row_id', 'query_name', 'query_genus', 'query_species'))),
+      dplyr::select(
+        -dplyr::any_of(c(
+          '.row_id',
+          'query_name',
+          'query_genus',
+          'query_species'
+        ))
+      ),
     unmatched |>
       dplyr::select(-.row_id)
   ) |>
     dplyr::arrange(sorter)
 }
 
-.mdd_fuzzy_match_species_within_genus <- function(df, target_df, max_dist = 1, method = "osa") {
+.mdd_fuzzy_match_species_within_genus <- function(
+  df,
+  target_df,
+  max_dist = 1,
+  method = "osa"
+) {
   df <- .mdd_empty_match_columns(df)
-  if (nrow(df) == 0) return(df)
+  if (nrow(df) == 0) {
+    return(df)
+  }
 
   df_work <- dplyr::mutate(
-    df,
+    dplyr::select(df, -dplyr::any_of("species_key_tmp")),
     .row_id = dplyr::row_number(),
-    species_key_tmp = paste(matched_genus, orig_species)
+    species_key_tmp = paste(matched_genus, orig_species),
+    .orig_len = nchar(orig_species)
   )
-  df_work_clean <- .drop_match_distance_cols(df_work)
+  df_work_clean <- .drop_match_distance_cols(df_work) |>
+    dplyr::select(-dplyr::any_of(c("species_key_tmp.x", "species_key_tmp.y")))
+
+  genus_bounds <- df_work |>
+    dplyr::filter(!is.na(matched_genus), !is.na(.orig_len)) |>
+    dplyr::group_by(matched_genus) |>
+    dplyr::summarise(
+      min_orig_len = min(.orig_len),
+      max_orig_len = max(.orig_len),
+      .groups = "drop"
+    )
+
   db_subset <- .drop_match_distance_cols(target_df) |>
-    dplyr::semi_join(df_work |> dplyr::distinct(matched_genus), by = c("query_genus" = "matched_genus")) |>
+    dplyr::select(
+      -dplyr::any_of(c(
+        "species_key_tmp",
+        "species_key_tmp.x",
+        "species_key_tmp.y"
+      ))
+    ) |>
+    dplyr::semi_join(
+      df_work |> dplyr::distinct(matched_genus),
+      by = c("query_genus" = "matched_genus")
+    ) |>
+    dplyr::mutate(.cand_len = nchar(query_species)) |>
+    dplyr::inner_join(genus_bounds, by = c("query_genus" = "matched_genus")) |>
+    dplyr::filter(
+      .cand_len >= (min_orig_len - max_dist),
+      .cand_len <= (max_orig_len + max_dist)
+    ) |>
     dplyr::mutate(species_key_tmp = paste(query_genus, query_species)) |>
     dplyr::distinct()
 
   matched_temp <- fuzzyjoin::stringdist_left_join(
-    .join_ready_left(df_work_clean, db_subset, keep = 'species_key_tmp'),
+    .join_ready_left(df_work_clean, db_subset, keep = "species_key_tmp"),
     db_subset,
     by = c("species_key_tmp" = "species_key_tmp"),
     method = method,
@@ -836,10 +1088,7 @@ mdd_matching <- function(x,
     distance_col = "fuzzy_species_dist"
   ) |>
     dplyr::filter(!is.na(query_species)) |>
-    dplyr::mutate(
-      .orig_len = nchar(orig_species),
-      .cand_len = nchar(query_species)
-    ) |>
+    dplyr::filter(abs(.orig_len - .cand_len) <= max_dist) |>
     dplyr::filter(!(.orig_len <= 7 & .orig_len != .cand_len)) |>
     dplyr::group_by(.row_id) |>
     dplyr::slice_min(order_by = fuzzy_species_dist, with_ties = TRUE) |>
@@ -866,19 +1115,29 @@ mdd_matching <- function(x,
       matched_species = query_species
     )
 
-  unmatched <- fuzzyjoin::stringdist_anti_join(
-    .join_ready_left(df_work_clean, db_subset, keep = 'species_key_tmp'),
-    db_subset,
-    by = c("species_key_tmp" = "species_key_tmp"),
-    method = method,
-    max_dist = max_dist
-  )
+  unmatched <- df_work |>
+    dplyr::anti_join(matched |> dplyr::select(.row_id), by = ".row_id")
 
   out <- dplyr::bind_rows(
     matched |>
-      dplyr::select(-dplyr::any_of(c('.row_id', 'query_name', 'query_name_clean', 'query_genus', 'query_species', '.orig_len', '.cand_len', 'species_key_tmp'))),
+      dplyr::select(
+        -dplyr::any_of(c(
+          ".row_id",
+          "query_name",
+          "query_name_clean",
+          "query_genus",
+          "query_species",
+          ".orig_len",
+          ".cand_len",
+          "species_key_tmp",
+          "min_orig_len",
+          "max_orig_len"
+        ))
+      ),
     unmatched |>
-      dplyr::select(-dplyr::any_of(c('.row_id', 'species_key_tmp')))
+      dplyr::select(
+        -dplyr::any_of(c(".row_id", ".orig_len", "species_key_tmp"))
+      )
   ) |>
     dplyr::arrange(sorter)
 
