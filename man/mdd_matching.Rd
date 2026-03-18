@@ -39,5 +39,22 @@ criteria through exact genus, fuzzy genus, exact species-within-genus, and
 fuzzy species-within-genus matching.
 }
 \examples{
-mdd_matching(c("Puma concolor", "Felis concolor", "Pumma concolor"))
+checklist <- tibble::tibble(
+  id = c("1", "2"),
+  sci_name = c("Puma_concolor", "Vicugna_vicugna"),
+  genus = c("Puma", "Vicugna"),
+  specific_epithet = c("concolor", "vicugna"),
+  authority_species_author = c("Linnaeus", "Molina")
+)
+synonyms <- tibble::tibble(
+  mdd_syn_id = c("1001", "1002"),
+  mdd_species_id = c("1", "2"),
+  mdd_author = c("Linnaeus", "Molina"),
+  mdd_original_combination = c("Felis concolor", "Auchenia vicugna")
+)
+backbone <- build_mdd_match_backbone(checklist, synonyms)
+mdd_matching(
+  c("Puma concolor", "Felis concolor", "Pumma concolor"),
+  target_df = backbone
+)
 }

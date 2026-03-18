@@ -16,7 +16,30 @@
 #'
 #' @return An object of class `mdd_taxon_info`.
 #' @examples
-#' x <- mdd_taxon_info("Puma concolor")
+#' checklist <- tibble::tibble(
+#'   id = "1",
+#'   sci_name = "Puma_concolor",
+#'   genus = "Puma",
+#'   specific_epithet = "concolor",
+#'   authority_species_author = "Linnaeus",
+#'   authority_species_year = "1758",
+#'   order = "Carnivora",
+#'   family = "Felidae",
+#'   main_common_name = "Puma"
+#' )
+#' synonyms <- tibble::tibble(
+#'   mdd_syn_id = "1001",
+#'   mdd_species_id = "1",
+#'   mdd_author = "Linnaeus",
+#'   mdd_original_combination = "Felis concolor",
+#'   mdd_validity = "synonym",
+#'   mdd_nomenclature_status = "available"
+#' )
+#' x <- mdd_taxon_info(
+#'   "Felis concolor",
+#'   checklist = checklist,
+#'   synonyms = synonyms
+#' )
 #' x
 #' as.list(x)
 #' @export

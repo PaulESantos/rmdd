@@ -1,4 +1,4 @@
-# rmdd 0.0.0.9000
+# rmdd 0.0.0.1
 
 * `mdd_distribution_map()` adds customizable Natural Earth distribution maps with automatic zoom and exact/partial input reconciliation.
 * `mdd_distribution_summary()` adds country-, continent-, and subregion-level diversity tables with counts of orders, families, genera, living species, and extinct species.

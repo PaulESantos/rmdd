@@ -14,7 +14,24 @@
 #'
 #' @return A list of class `mdd_taxon_record`.
 #' @examples
-#' mdd_taxon_record(name = "Puma concolor")
+#' checklist <- tibble::tibble(
+#'   id = "1",
+#'   sci_name = "Puma_concolor",
+#'   genus = "Puma",
+#'   specific_epithet = "concolor",
+#'   authority_species_author = "Linnaeus"
+#' )
+#' synonyms <- tibble::tibble(
+#'   mdd_syn_id = "1001",
+#'   mdd_species_id = "1",
+#'   mdd_author = "Linnaeus",
+#'   mdd_original_combination = "Felis concolor"
+#' )
+#' mdd_taxon_record(
+#'   name = "Felis concolor",
+#'   checklist = checklist,
+#'   synonyms = synonyms
+#' )
 #' @export
 mdd_taxon_record <- function(
   name = NULL,
