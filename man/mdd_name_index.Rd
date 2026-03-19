@@ -15,6 +15,10 @@ mdd_name_index(checklist = NULL, synonyms = NULL)
 A tibble with one row per queryable accepted name or synonym.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Create a reusable name index that combines accepted checklist names,
 checklist original combinations, and synonym names while preserving the
 accepted-species linkage for each row.

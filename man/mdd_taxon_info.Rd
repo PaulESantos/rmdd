@@ -32,6 +32,10 @@ reconciliation.}
 An object of class \code{mdd_taxon_info}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Resolve a mammal name against the local MDD backbone and return a structured
 object built from \code{mdd_checklist} and \code{mdd_synonyms}, including the accepted
 taxon record, synonym records, and grouped sections that mirror the main

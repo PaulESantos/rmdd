@@ -13,7 +13,9 @@ mdd_cache_dir(path = NULL)
 A scalar character path.
 }
 \description{
-Return the default rmdd cache directory
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+This function is stable and its interface is expected to remain compatible.
 }
 \examples{
 mdd_cache_dir(tempdir())

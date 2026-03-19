@@ -1,5 +1,10 @@
 #' Return checklist records in a normalized tibble
 #'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
+#'
 #' @param checklist Optional checklist data frame. Defaults to `mdd_checklist`.
 #'
 #' @return A tibble.
@@ -21,6 +26,11 @@ mdd_checklist_records <- function(checklist = NULL) {
 
 #' Return synonym records in a normalized tibble
 #'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
+#'
 #' @param synonyms Optional synonym data frame. Defaults to `mdd_synonyms`.
 #'
 #' @return A tibble.
@@ -41,6 +51,11 @@ mdd_synonym_records <- function(synonyms = NULL) {
 }
 
 #' Return release records used by rmdd
+#'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
 #'
 #' @param checklist Optional checklist data frame.
 #' @param synonyms Optional synonym data frame.
@@ -342,6 +357,11 @@ mdd_release_records <- function(
 
 #' Build a normalized MDD name index
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Create a reusable name index that combines accepted checklist names,
 #' checklist original combinations, and synonym names while preserving the
 #' accepted-species linkage for each row.
@@ -358,6 +378,7 @@ mdd_release_records <- function(
 #' idx
 #' @export
 mdd_name_index <- function(checklist = NULL, synonyms = NULL) {
+  lifecycle::signal_stage("experimental", "mdd_name_index()")
   checklist <- .prepare_checklist_match_records(checklist)
   synonyms <- .prepare_synonym_match_records(synonyms)
 

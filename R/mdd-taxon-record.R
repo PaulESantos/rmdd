@@ -1,5 +1,10 @@
 #' Retrieve a normalized MDD taxon record
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Resolve a taxon by accepted MDD identifier or by scientific name against
 #' the local MDD name index. The returned object contains the match result,
 #' accepted taxon row, linked synonym rows, and the canonical MDD taxon URL.
@@ -42,6 +47,7 @@ mdd_taxon_record <- function(
   max_dist = 1,
   method = "osa"
 ) {
+  lifecycle::signal_stage("experimental", "mdd_taxon_record()")
   checklist <- mdd_checklist_records(checklist)
   synonyms <- mdd_synonym_records(synonyms)
   target_df <- target_df %||%

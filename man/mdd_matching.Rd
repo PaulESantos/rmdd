@@ -33,6 +33,10 @@ A tibble with row-level traceability, pathway flags, matched name
 context, accepted-name context, and fuzzy distance columns.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Run a staged species-level reconciliation pipeline against an MDD backbone.
 The workflow prioritizes exact evidence first, then progressively relaxes
 criteria through exact genus, fuzzy genus, exact species-within-genus, and

@@ -1,5 +1,10 @@
 #' Retrieve structured MDD taxon information by name
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Resolve a mammal name against the local MDD backbone and return a structured
 #' object built from `mdd_checklist` and `mdd_synonyms`, including the accepted
 #' taxon record, synonym records, and grouped sections that mirror the main
@@ -51,6 +56,7 @@ mdd_taxon_info <- function(
   max_dist = 1,
   method = "osa"
 ) {
+  lifecycle::signal_stage("experimental", "mdd_taxon_info()")
   record <- mdd_taxon_record(
     name = name,
     checklist = checklist,

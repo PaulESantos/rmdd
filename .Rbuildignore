@@ -11,3 +11,5 @@
 ^package\.json$
 ^Rplots\.pdf$
 ^\.Rhistory$
+^README_files$
+^cran-comments\.md$

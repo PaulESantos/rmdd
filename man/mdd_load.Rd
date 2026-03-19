@@ -13,7 +13,9 @@ mdd_load(path)
 A tibble.
 }
 \description{
-Load an MDD comma-separated export
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+This function is stable and its interface is expected to remain compatible.
 }
 \examples{
 sample_path <- system.file("extdata", "mdd_sample.csv", package = "rmdd")

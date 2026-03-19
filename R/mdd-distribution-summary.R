@@ -1,5 +1,10 @@
 #' Summarize mammal diversity by country, continent, or subregion
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Expand MDD distribution fields and compute diversity summaries by
 #' geographic unit. The summary reports counts of distinct orders, families,
 #' genera, living species, and extinct species for each unit listed in the
@@ -23,6 +28,7 @@ mdd_distribution_summary_raw <- function(
   level = c("country", "continent", "subregion"),
   checklist = NULL
 ) {
+  lifecycle::signal_stage("experimental", "mdd_distribution_summary_raw()")
   level <- match.arg(level)
   checklist <- mdd_checklist_records(checklist)
 
@@ -74,6 +80,11 @@ mdd_distribution_summary_raw <- function(
 
 #' Summarize mammal diversity by country, continent, or subregion
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Wrapper around [mdd_distribution_summary_raw()] that optionally excludes
 #' domesticated species and species considered widespread at the requested
 #' geographic level.
@@ -106,6 +117,7 @@ mdd_distribution_summary <- function(
   exclude_widespread = FALSE,
   widespread_threshold = NULL
 ) {
+  lifecycle::signal_stage("experimental", "mdd_distribution_summary()")
   level <- match.arg(level)
   checklist <- mdd_checklist_records(checklist)
 

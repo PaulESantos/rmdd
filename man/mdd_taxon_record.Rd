@@ -33,6 +33,10 @@ mdd_taxon_record(
 A list of class \code{mdd_taxon_record}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Resolve a taxon by accepted MDD identifier or by scientific name against
 the local MDD name index. The returned object contains the match result,
 accepted taxon row, linked synonym rows, and the canonical MDD taxon URL.

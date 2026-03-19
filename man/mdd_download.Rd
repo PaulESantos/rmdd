@@ -19,7 +19,9 @@ mdd_download(url, dest_dir = mdd_cache_dir(), dest_file = NULL, mode = "wb")
 The downloaded file path, invisibly.
 }
 \description{
-Download a Mammal Diversity Database file
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+This function is stable and its interface is expected to remain compatible.
 }
 \examples{
 if (interactive()) {

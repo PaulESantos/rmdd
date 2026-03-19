@@ -95,6 +95,10 @@ A \code{ggplot2} map object. Additional metadata are attached in the
 \code{"mdd_distribution_info"} attribute.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Resolve a mammal name with \code{\link[=mdd_matching]{mdd_matching()}} and map its
 \code{country_distribution} values against an \code{rnaturalearth} countries layer.
 The function preserves the package's exact vs partial input validation by

@@ -21,7 +21,9 @@ mdd_release_records(
 A named list of tibbles.
 }
 \description{
-Return release records used by rmdd
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+This function is stable and its interface is expected to remain compatible.
 }
 \examples{
 x <- mdd_release_records()

@@ -1,5 +1,10 @@
 #' Classify mammal scientific names into taxonomic components
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Parse mammal scientific names into genus, optional subgenus, species,
 #' optional subspecies, and trailing author text. The parser is intentionally
 #' conservative and targets species-level MDD reconciliation workflows.
@@ -15,6 +20,7 @@
 #' ))
 #' @export
 classify_mammal_names <- function(splist) {
+  lifecycle::signal_stage("experimental", "classify_mammal_names()")
   if (!is.character(splist)) {
     rlang::abort("`splist` must be a character vector.")
   }
@@ -97,6 +103,11 @@ classify_mammal_names <- function(splist) {
 
 #' Build an MDD reconciliation backbone
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Construct a species-level reconciliation backbone that combines accepted MDD
 #' checklist names with synonym names and links every matched name to its
 #' accepted species context.
@@ -113,6 +124,7 @@ classify_mammal_names <- function(splist) {
 #' bb
 #' @export
 build_mdd_match_backbone <- function(checklist = NULL, synonyms = NULL) {
+  lifecycle::signal_stage("experimental", "build_mdd_match_backbone()")
   if (is.null(checklist) && is.null(synonyms)) {
     return(.mdd_default_match_backbone())
   }
@@ -122,6 +134,11 @@ build_mdd_match_backbone <- function(checklist = NULL, synonyms = NULL) {
 }
 
 #' Reconcile mammal names against MDD
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
 #'
 #' Run a staged species-level reconciliation pipeline against an MDD backbone.
 #' The workflow prioritizes exact evidence first, then progressively relaxes
@@ -167,6 +184,7 @@ mdd_matching <- function(
   max_dist = 1,
   method = "osa"
 ) {
+  lifecycle::signal_stage("experimental", "mdd_matching()")
   df <- .mdd_check_input(x)
   df$input_index <- seq_len(nrow(df))
   df$.dedup_key <- ifelse(

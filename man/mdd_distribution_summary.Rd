@@ -35,6 +35,10 @@ A tibble with one row per geographic unit and the columns \code{region},
 \code{total_species}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Wrapper around \code{\link[=mdd_distribution_summary_raw]{mdd_distribution_summary_raw()}} that optionally excludes
 domesticated species and species considered widespread at the requested
 geographic level.

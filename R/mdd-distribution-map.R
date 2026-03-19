@@ -1,5 +1,10 @@
 #' Generate a distribution map from MDD country distributions
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' This function is experimental and may change in future releases.
+#'
 #' Resolve a mammal name with [mdd_matching()] and map its
 #' `country_distribution` values against an `rnaturalearth` countries layer.
 #' The function preserves the package's exact vs partial input validation by
@@ -73,6 +78,7 @@ mdd_distribution_map <- function(
   title_size = 16,
   title_face = "bold"
 ) {
+  lifecycle::signal_stage("experimental", "mdd_distribution_map()")
   if (
     !is.character(name) ||
       length(name) != 1L ||

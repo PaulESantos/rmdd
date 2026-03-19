@@ -1,5 +1,10 @@
 #' Return the default rmdd cache directory
 #'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
+#'
 #' @param path Optional path. If `NULL`, a user cache directory is constructed.
 #'
 #' @return A scalar character path.
@@ -22,6 +27,11 @@ mdd_cache_dir <- function(path = NULL) {
 }
 
 #' Download a Mammal Diversity Database file
+#'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
 #'
 #' @param url URL to the source file.
 #' @param dest_dir Destination directory for the downloaded file.
@@ -64,6 +74,11 @@ mdd_download <- function(
 
 #' Load an MDD comma-separated export
 #'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
+#'
 #' @param path Path to a local CSV export from MDD.
 #'
 #' @return A tibble.
@@ -85,6 +100,11 @@ mdd_load <- function(path) {
 }
 
 #' Reference citations for the Mammal Diversity Database
+#'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function is stable and its interface is expected to remain compatible.
 #'
 #' Return the recommended citation for the current MDD Zenodo release and,
 #' optionally, format a citation for a specific MDD taxon entry.

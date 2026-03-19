@@ -13,7 +13,9 @@ mdd_synonym_records(synonyms = NULL)
 A tibble.
 }
 \description{
-Return synonym records in a normalized tibble
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+This function is stable and its interface is expected to remain compatible.
 }
 \examples{
 mdd_synonym_records()

@@ -14,6 +14,10 @@ A tibble with one row per input name and standardized columns for
 species-level reconciliation.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Parse mammal scientific names into genus, optional subgenus, species,
 optional subspecies, and trailing author text. The parser is intentionally
 conservative and targets species-level MDD reconciliation workflows.

@@ -15,6 +15,10 @@ build_mdd_match_backbone(checklist = NULL, synonyms = NULL)
 A tibble used internally by \code{\link[=mdd_matching]{mdd_matching()}}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+This function is experimental and may change in future releases.
+
 Construct a species-level reconciliation backbone that combines accepted MDD
 checklist names with synonym names and links every matched name to its
 accepted species context.

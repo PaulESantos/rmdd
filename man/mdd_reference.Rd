@@ -18,6 +18,10 @@ An object of class \code{mdd_reference} containing dataset-level and,
 when requested, entry-level citation strings.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+This function is stable and its interface is expected to remain compatible.
+
 Return the recommended citation for the current MDD Zenodo release and,
 optionally, format a citation for a specific MDD taxon entry.
 }
