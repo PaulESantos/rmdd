@@ -113,8 +113,8 @@ mdd_taxon_record <- function(
       is.na(name) ||
       !nzchar(stringr::str_squish(name))
   ) {
-    rlang::abort(
-      "`name` must be a single non-empty character string when `taxon_id` is not supplied."
+    cli::cli_abort(
+      "{.arg name} must be a single non-empty character string when {.arg taxon_id} is not supplied."
     )
   }
 

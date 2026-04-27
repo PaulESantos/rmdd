@@ -96,12 +96,51 @@ mdd_taxon_info <- function(
     sections = .mdd_taxon_sections(taxon_tbl, synonym_tbl),
     synonyms = synonym_tbl,
     url = record$url
+    name = name,
+    checklist = checklist,
+    synonyms = synonyms,
+    target_df = target_df,
+    max_dist = max_dist,
+    method = method
+  )
+
+  if (!isTRUE(record$matched)) {
+    out <- list(
+      query = record$query,
+      matched = FALSE,
+      match = record$match,
+      taxon = NULL,
+      sections = list(),
+      synonyms = tibble::tibble(),
+      url = record$url
+    )
+    class(out) <- "mdd_taxon_info"
+    return(out)
+  }
+
+  taxon_tbl <- record$taxon_tbl
+  synonym_tbl <- record$synonym_tbl
+  taxon_row <- if (nrow(taxon_tbl) == 0) {
+    NULL
+  } else {
+    as.list(taxon_tbl[1, , drop = FALSE])
+  }
+
+  out <- list(
+    query = record$query,
+    matched = TRUE,
+    match = record$match,
+    taxon = taxon_row,
+    sections = .mdd_taxon_sections(taxon_tbl, synonym_tbl),
+    synonyms = synonym_tbl,
+    url = record$url
   )
 
   class(out) <- "mdd_taxon_info"
   out
 }
 
+#' @return The \code{mdd_taxon_info} object, invisibly.
 #' @export
 print.mdd_taxon_info <- function(x, ...) {
   if (!isTRUE(x$matched)) {
@@ -306,6 +345,7 @@ print.mdd_taxon_info <- function(x, ...) {
   tbl[[name]]
 }
 
+#' @return A list representation of the \code{mdd_taxon_info} object.
 #' @export
 as.list.mdd_taxon_info <- function(x, ...) {
   unclass(x)

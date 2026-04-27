@@ -22,11 +22,11 @@
 classify_mammal_names <- function(splist) {
   lifecycle::signal_stage("experimental", "classify_mammal_names()")
   if (!is.character(splist)) {
-    rlang::abort("`splist` must be a character vector.")
+    cli::cli_abort("{.arg splist} must be a character vector.")
   }
 
   if (length(splist) == 0) {
-    rlang::abort("`splist` must contain at least one name.")
+    cli::cli_abort("{.arg splist} must contain at least one name.")
   }
 
   parse_one <- function(x, idx) {
@@ -199,9 +199,10 @@ mdd_matching <- function(
 
   had_duplicates <- any(duplicated(df$.dedup_key))
   if (had_duplicates && !isTRUE(allow_duplicates)) {
-    rlang::abort(
-      "Duplicate genus-species keys detected. Use `allow_duplicates = TRUE` to keep all rows."
-    )
+    cli::cli_abort(c(
+      "Duplicate genus-species keys detected.",
+      "i" = "Use {.code allow_duplicates = TRUE} to keep all rows."
+    ))
   }
 
   df_work <- if (had_duplicates && isTRUE(allow_duplicates)) {
@@ -439,14 +440,10 @@ mdd_matching <- function(
 .assert_has_columns <- function(x, cols, object_name) {
   missing_cols <- setdiff(cols, names(x))
   if (length(missing_cols) > 0) {
-    rlang::abort(
-      paste0(
-        "Missing required columns in `",
-        object_name,
-        "`: ",
-        paste(missing_cols, collapse = ", ")
-      )
-    )
+    cli::cli_abort(c(
+      "Missing required columns in {.var {object_name}}",
+      "x" = "Missing {length(missing_cols)} column{?s}: {.field {missing_cols}}"
+    ))
   }
 }
 
@@ -619,7 +616,7 @@ mdd_matching <- function(
   }
 
   if (!inherits(x, "data.frame")) {
-    rlang::abort("`x` must be a character vector or a data frame.")
+    cli::cli_abort("{.arg x} must be a character vector or a data frame.")
   }
 
   df <- tibble::as_tibble(x)
@@ -637,9 +634,10 @@ mdd_matching <- function(
   } else if (all(c("Genus", "Species") %in% names(df))) {
     out <- dplyr::rename(df, orig_genus = Genus, orig_species = Species)
   } else {
-    rlang::abort(
-      "Input data must contain genus/species columns or use `classify_mammal_names()` first."
-    )
+    cli::cli_abort(c(
+      "Input data must contain genus/species columns.",
+      "i" = "Or use {.fn classify_mammal_names} first."
+    ))
   }
 
   n <- nrow(out)

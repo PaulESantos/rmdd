@@ -8,6 +8,14 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+# rmdd
+
+<!-- badges: start -->
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![CRAN status](https://www.r-pkg.org/badges/version/rmdd)](https://CRAN.R-project.org/package=rmdd)
+[![](http://cranlogs.r-pkg.org/badges/grand-total/rmdd?color=green)](https://cran.r-project.org/package=rmdd)
+[![](http://cranlogs.r-pkg.org/badges/last-week/rmdd?color=green)](https://cran.r-project.org/package=rmdd)
+<!-- badges: end -->
 
 ## Overview
 
@@ -20,6 +28,9 @@ The MDD currently covers **6,871 mammal species** (6,758 living wild + 113 recen
 ## Installation
 
 ```r
+# Install from CRAN:
+install.packages("rmdd")
+
 # Install the development version from GitHub:
 # install.packages("pak")
 pak::pak("PaulESantos/rmdd")

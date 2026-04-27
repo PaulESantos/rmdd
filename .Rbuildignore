@@ -13,3 +13,5 @@
 ^\.Rhistory$
 ^README_files$
 ^cran-comments\.md$
+^\.positai$
+^\.claude$

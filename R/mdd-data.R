@@ -88,12 +88,12 @@ mdd_download <- function(
 #' @export
 mdd_load <- function(path) {
   if (!fs::file_exists(path)) {
-    rlang::abort(paste0("File does not exist: ", path))
+    cli::cli_abort("File does not exist: {.file {path}}")
   }
 
   ext <- fs::path_ext(path)
   if (!identical(tolower(ext), "csv")) {
-    rlang::abort("`mdd_load()` currently supports CSV files only.")
+    cli::cli_abort("{.fn mdd_load} currently supports CSV files only.")
   }
 
   readr::read_csv(path, col_types = readr::cols(), show_col_types = FALSE)
@@ -107,6 +107,72 @@ mdd_load <- function(path) {
 #' This function is stable and its interface is expected to remain compatible.
 #'
 #' Return the recommended citation for the current MDD Zenodo release and,
+#' optionally, format a citation for a specific MDD taxon entry.
+#'
+#' @param taxon_id Optional MDD taxon identifier for a specific entry.
+#' @param taxon_name Optional scientific name to use in the entry citation.
+#'   If `NULL` and `taxon_id` is provided, the function tries to recover the
+#'   accepted name from `mdd_checklist`.
+#' @return An object of class `mdd_reference` containing dataset-level and,
+#'   when requested, entry-level citation strings.
+#' @examples
+#' mdd_reference()
+#' mdd_reference(taxon_id = "1001892", taxon_name = "Dipodomys deserti")
+#' @export
+mdd_reference <- function(taxon_id = NULL, taxon_name = NULL) {
+  has_taxon <- !is.null(taxon_id)
+
+  if (has_taxon) {
+    taxon_id <- as.character(taxon_id)
+    if (length(taxon_id) != 1L || is.na(taxon_id) || !nzchar(taxon_id)) {
+      cli::cli_abort(c(
+        "{.arg taxon_id} must be a single non-empty value.",
+        "x" = "You supplied {.val {taxon_id}}."
+      ))
+    }
+  }
+
+  fetched_on <- Sys.Date()
+
+  dataset_citation <- paste(
+    "Mammal Diversity Database. (2026). Mammal Diversity Database",
+    "(Version 2.4) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17033774"
+  )
+
+  resolved_taxon_name <- taxon_name
+  if (has_taxon && is.null(resolved_taxon_name)) {
+    checklist <- .mdd_default_dataset("mdd_checklist")
+    if (!is.null(checklist)) {
+      match_row <- tibble::as_tibble(checklist) |>
+        dplyr::filter(as.character(id) == taxon_id) |>
+        dplyr::slice_head(n = 1)
+      if (nrow(match_row) == 1) {
+        resolved_taxon_name <- .canonical_binomial(
+          match_row$genus,
+          match_row$specific_epithet
+        )
+      }
+    }
+  }
+
+  entry_citation <- NULL
+  if (has_taxon) {
+    if (
+      is.null(resolved_taxon_name) || !nzchar(as.character(resolved_taxon_name))
+    ) {
+      cli::cli_abort(c(
+        "A specific entry citation requires a taxon name.",
+        "i" = "Supply {.arg taxon_name} or provide a {.arg taxon_id} present in {.data mdd_checklist}."
+      ))
+    }
+
+    fetched_label <- .mdd_format_citation_date(fetched_on)
+
+    entry_citation <- paste0(
+      resolved_taxon_name,
+      " (ASM Mammal Diversity Database #",
+      taxon_id,
+      ") fetched ",
 #' optionally, format a citation for a specific MDD taxon entry.
 #'
 #' @param taxon_id Optional MDD taxon identifier for a specific entry.
@@ -193,6 +259,7 @@ mdd_reference <- function(taxon_id = NULL, taxon_name = NULL) {
   out
 }
 
+#' @return The \code{mdd_reference} object, invisibly.
 #' @export
 print.mdd_reference <- function(x, ...) {
   cli::cli_h2("MDD Citation")
@@ -206,6 +273,7 @@ print.mdd_reference <- function(x, ...) {
 
   invisible(x)
 }
+
 .mdd_format_citation_date <- function(x) {
   x <- as.Date(x)
   parts <- as.POSIXlt(x)

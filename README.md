@@ -1,4 +1,16 @@
 
+# rmdd
+
+<!-- badges: start -->
+
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/rmdd)](https://CRAN.R-project.org/package=rmdd)
+[![](http://cranlogs.r-pkg.org/badges/grand-total/rmdd?color=green)](https://cran.r-project.org/package=rmdd)
+[![](http://cranlogs.r-pkg.org/badges/last-week/rmdd?color=green)](https://cran.r-project.org/package=rmdd)
+<!-- badges: end -->
+
 ## Overview
 
 `rmdd` is a tidyverse-style R package that wraps the **Mammal Diversity
@@ -18,6 +30,9 @@ names** curated across 27 orders, 167 families, and 1,360 genera.
 ## Installation
 
 ``` r
+# Install from CRAN:
+install.packages("rmdd")
+
 # Install the development version from GitHub:
 # install.packages("pak")
 pak::pak("PaulESantos/rmdd")
@@ -284,11 +299,11 @@ mdd_reference()
 library(rmdd)
 library(tidyverse)
 #> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.2.0     ✔ readr     2.2.0
+#> ✔ dplyr     1.2.1     ✔ readr     2.2.0
 #> ✔ forcats   1.0.1     ✔ stringr   1.6.0
 #> ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
 #> ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-#> ✔ purrr     1.2.1     
+#> ✔ purrr     1.2.2     
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 #> ✖ dplyr::filter() masks stats::filter()
 #> ✖ dplyr::lag()    masks stats::lag()
