@@ -10,7 +10,7 @@ Description: Download, inspect, reconcile, and summarize mammal taxonomic
     mapped outputs derived from packaged MDD releases. Designed for
     reproducible mammal name resolution workflows in 'R'.
 License: MIT + file LICENSE
-URL: https://github.com/PaulESantos/rmdd, https://www.mammaldiversity.org/
+URL: https://github.com/PaulESantos/rmdd, https://paulesantos.github.io/rmdd/, https://www.mammaldiversity.org/
 BugReports: https://github.com/PaulESantos/rmdd/issues
 Depends: 
     R (>= 4.3.0)

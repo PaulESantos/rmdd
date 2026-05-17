@@ -6,13 +6,16 @@
 \alias{rmdd-package}
 \title{rmdd: Mammal Diversity Database Tools}
 \description{
-Development scaffold for a tidyverse-style package that resolves mammal
-taxonomic names against the Mammal Diversity Database.
+Tools and packaged data for working with the Mammal Diversity Database (MDD)
+in R. The package supports mammal name reconciliation, accepted-name
+retrieval, taxon summaries, distribution summaries, and distribution maps
+derived from the current bundled MDD release.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/PaulESantos/rmdd}
+  \item \url{https://paulesantos.github.io/rmdd/}
   \item \url{https://www.mammaldiversity.org/}
   \item Report bugs at \url{https://github.com/PaulESantos/rmdd/issues}
 }

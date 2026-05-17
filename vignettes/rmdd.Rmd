@@ -16,11 +16,143 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(rmdd)
+library(dplyr)
 ```
 
-`rmdd` is intended to support mammal taxonomic name resolution workflows based
-on the Mammal Diversity Database.
+`rmdd` packages the Mammal Diversity Database (MDD) for R and adds helpers for
+four common tasks:
+
+- loading the current MDD release locally,
+- reconciling mammal names against accepted names, synonyms, and original combinations,
+- retrieving structured taxon records,
+- summarizing and mapping species distributions.
+
+## Package data
+
+After `library(rmdd)`, the main datasets are available immediately:
+
+```{r}
+tibble::tibble(
+  dataset = c("mdd_checklist", "mdd_synonyms", "mdd_type_specimen_metadata"),
+  rows = c(nrow(mdd_checklist), nrow(mdd_synonyms), nrow(mdd_type_specimen_metadata))
+)
+```
+
+The most commonly used table is `mdd_checklist`, which stores the current
+accepted species list and its associated taxonomy, status, and distribution
+fields.
+
+```{r}
+mdd_checklist |>
+  select(sci_name, order, family, country_distribution, iucn_status) |>
+  slice_head(n = 5)
+```
+
+## Name reconciliation
+
+`mdd_matching()` resolves mammal names through a staged workflow that combines
+accepted names, synonym data, original combinations, and fuzzy matching.
+
+```{r}
+names_to_check <- c(
+  "Puma concolor",
+  "Felis concolor",
+  "Panthera onkca",
+  "Capromys (Pygmaeocapromys) angelcabrerai"
+)
+
+mdd_matching(names_to_check) |>
+  select(
+    input_name,
+    matched_name,
+    taxon_status,
+    accepted_name,
+    match_stage
+  )
+```
+
+If you need to inspect how names are parsed before matching, use
+`classify_mammal_names()`.
+
+```{r}
+classify_mammal_names(c(
+  "Mus musculus domesticus",
+  "Capromys (Pygmaeocapromys) angelcabrerai",
+  "Panthera onkca"
+)) |>
+  select(
+    input_name,
+    orig_genus,
+    orig_subgenus,
+    orig_species,
+    orig_subspecies
+  )
+```
+
+## Taxon retrieval
+
+For programmatic workflows, `mdd_taxon_record()` returns a structured object
+that includes the accepted taxon row in `taxon_tbl`, the matching result in
+`match`, and linked synonym rows in `synonym_tbl`.
+
+```{r}
+mdd_taxon_record("Vicugna vicugna")$taxon_tbl |>
+  select(
+    sci_name,
+    original_name_combination,
+    main_common_name,
+    country_distribution,
+    iucn_status
+  )
+```
+
+For interactive use, `mdd_taxon_info()` prints a richer summary grouped into
+taxonomy, authority, distribution, and status sections.
+
+```{r}
+mdd_taxon_info("Vicugna vicugna")
+```
+
+## Distribution summaries
+
+`mdd_distribution_summary()` aggregates the checklist at country, continent, or
+subregion level.
+
+```{r}
+mdd_distribution_summary(level = "country") |>
+  arrange(desc(total_species)) |>
+  slice_head(n = 10)
+```
+
+The raw variant leaves filtering decisions explicit:
+
+```{r}
+mdd_distribution_summary_raw(level = "continent") |>
+  arrange(desc(total_species))
+```
+
+## Distribution maps
+
+`mdd_distribution_map()` reconciles checklist distribution units against
+`rnaturalearth` polygons and returns a `ggplot` object.
+
+```{r, fig.alt = "Distribution map of Lama vicugna across western South America."}
+mdd_distribution_map("Lama vicugna", quiet = TRUE)
+```
+
+Map styling can be customized through the function arguments, while the default
+output is intended to be a neutral base for further `ggplot2` modifications.
+
+## Citation
+
+Use `mdd_reference()` to cite the bundled MDD release used by the package.
 
 ```{r}
 mdd_reference()
+```
+
+Use base R citation metadata to cite the package itself:
+
+```{r}
+citation("rmdd")
 ```

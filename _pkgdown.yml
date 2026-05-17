@@ -1,38 +1,95 @@
 url: https://paulesantos.github.io/rmdd/
 
+home:
+  title: rmdd R package
+  description: |
+    Tools and packaged data for working with the Mammal Diversity Database (MDD).
+    Includes taxonomic reconciliation, accepted-name retrieval, taxon summaries,
+    distribution summaries, and distribution maps based on the current MDD release.
+
+authors:
+  Paul E. Santos Andrade:
+    href: https://paulefrensa.rbind.io/
+
 template:
   bootstrap: 5
-  bootswatch: flatly
+  bslib:
+    font_scale: 1.0
+    base_font:
+      google: Jost
+    code_font:
+      google: Overpass Mono
+    heading_font:
+      google: Abhaya Libre
+    bg: "#FEFDF9"
+    fg: "#1A1A1A"
+    primary: "#2F5F8F"
+    secondary: "#8A6E46"
+    link-color: "#2F5F8F"
+    info: "#AFC8D9"
+    headings-color: "#2D2A26"
+    navbar-bg: "#FEFDF9"
+    navbar-light-color: "#2D2A26"
+    navbar-light-hover-color: "#2F5F8F"
+
+navbar:
+  type: light
+  structure:
+    left:
+      - home
+      - intro
+      - reference
+      - news
+    right:
+      - github
+  components:
+    intro:
+      text: Get started
+      href: articles/rmdd.html
 
 reference:
-  - title: "Data Download & Management"
-    desc: "Functions for downloading and loading MDD data."
+  - title: Package overview and data
+    desc: Package-level documentation, packaged datasets, and helpers for loading or citing MDD data.
     contents:
+      - rmdd-package
       - mdd_download
       - mdd_load
       - mdd_cache_dir
-
-  - title: "Taxonomic Matching & Reconciliation"
-    desc: "Functions for matching user names to the MDD database."
-    contents:
-      - build_mdd_match_backbone
-      - classify_mammal_names
-      - mdd_matching
-      - mdd_name_index
-
-  - title: "Data Retrieval"
-    desc: "Functions for retrieving specific records or taxa info."
-    contents:
-      - mdd_taxon_info
-      - mdd_taxon_record
-      - mdd_checklist_records
-      - mdd_release_records
-      - mdd_synonym_records
       - mdd_reference
+      - mdd_checklist
+      - mdd_synonyms
+      - mdd_type_specimen_metadata
+      - mdd_checklist_records
+      - mdd_synonym_records
+      - mdd_release_records
 
-  - title: "Spatial Distribution"
-    desc: "Functions for working with maps and spatial summaries."
+  - title: Name parsing and reconciliation
+    desc: Tools for parsing mammal names and resolving them against accepted names, synonyms, and original combinations in MDD.
     contents:
-      - mdd_distribution_map
-      - mdd_distribution_summary
+      - classify_mammal_names
+      - build_mdd_match_backbone
+      - mdd_name_index
+      - mdd_matching
+
+  - title: Taxon retrieval
+    desc: Functions for retrieving structured accepted-taxon summaries and detailed taxon records.
+    contents:
+      - mdd_taxon_record
+      - mdd_taxon_info
+
+  - title: Distribution and mapping
+    desc: Functions for summarizing and mapping MDD geographic distribution data.
+    contents:
       - mdd_distribution_summary_raw
+      - mdd_distribution_summary
+      - mdd_distribution_map
+
+  - title: S3 methods
+    desc: Printing and coercion helpers for rmdd objects.
+    contents:
+      - print.mdd_reference
+      - print.mdd_taxon_info
+      - as.list.mdd_taxon_info
+
+development:
+  mode: auto
