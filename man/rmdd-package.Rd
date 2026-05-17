@@ -21,5 +21,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Paul E. Santos Andrade \email{paulefrens@gmail.com} [copyright holder]
 
+Authors:
+\itemize{
+  \item Paul E. Santos Andrade \email{paulefrens@gmail.com} [copyright holder]
+}
+
 }
 \keyword{internal}

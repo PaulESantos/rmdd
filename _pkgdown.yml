@@ -1,4 +1,38 @@
-url: ~
+url: https://paulesantos.github.io/rmdd/
+
 template:
   bootstrap: 5
+  bootswatch: flatly
 
+reference:
+  - title: "Data Download & Management"
+    desc: "Functions for downloading and loading MDD data."
+    contents:
+      - mdd_download
+      - mdd_load
+      - mdd_cache_dir
+
+  - title: "Taxonomic Matching & Reconciliation"
+    desc: "Functions for matching user names to the MDD database."
+    contents:
+      - build_mdd_match_backbone
+      - classify_mammal_names
+      - mdd_matching
+      - mdd_name_index
+
+  - title: "Data Retrieval"
+    desc: "Functions for retrieving specific records or taxa info."
+    contents:
+      - mdd_taxon_info
+      - mdd_taxon_record
+      - mdd_checklist_records
+      - mdd_release_records
+      - mdd_synonym_records
+      - mdd_reference
+
+  - title: "Spatial Distribution"
+    desc: "Functions for working with maps and spatial summaries."
+    contents:
+      - mdd_distribution_map
+      - mdd_distribution_summary
+      - mdd_distribution_summary_raw
